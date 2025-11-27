@@ -12,7 +12,8 @@ mvnw.cmd spring-boot:run
 
 Then open:
 
-- http://localhost:8080/index.html
+- http://localhost:8081/index.html
 
 Open the page in multiple browser windows to see messages broadcast in real time.
+
 
