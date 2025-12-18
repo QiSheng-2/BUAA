@@ -1,66 +1,706 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>Chatroom</title>
+    <title>聊天室</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        #chat-container { display: flex; flex-direction: column; height: 100vh; }
-        #messages { flex: 1; padding: 10px; overflow-y: auto; border-bottom: 1px solid #ddd; }
-        #messages div { margin-bottom: 5px; }
-        #input-area { display: flex; padding: 10px; }
-        #input-area input[type="text"] { flex: 1; padding: 5px; }
-        #input-area button { margin-left: 5px; padding: 5px 10px; }
-        #status { padding: 4px 10px; font-size: 12px; color: #666; border-bottom: 1px solid #eee; }
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --warning-color: #f8961e;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-color: #6c757d;
+            --border-color: #dee2e6;
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+            --message-bg-user: #d1f0d7;
+            --message-bg-other: #ffffff;
+            --message-bg-bot: #e6fffa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--dark-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #chat-app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--card-background);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header Styles */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Main Content Layout */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background-color: var(--card-background);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-section {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-section h3 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            font-size: 1rem;
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--gray-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .friends-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .friend-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .friend-item:last-child {
+            border-bottom: none;
+        }
+
+        .friend-info {
+            flex: 1;
+        }
+
+        .friend-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* Chat Area Styles */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-user {
+            align-self: flex-end;
+            background-color: var(--message-bg-user);
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-other {
+            align-self: flex-start;
+            background-color: var(--message-bg-other);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-bot {
+            align-self: flex-start;
+            background-color: var(--message-bg-bot);
+            border-left: 4px solid #38b2ac;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--gray-color);
+        }
+
+        .message-content {
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .message-image {
+            max-width: 100%;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .message-image:hover {
+            transform: scale(1.02);
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--card-background);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+
+        .send-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 46px;
+            height: 46px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .send-button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .upload-button {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            border: none;
+            border-radius: 50%;
+            width: 46px;
+            height: 46px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .upload-button:hover {
+            background-color: var(--border-color);
+        }
+
+        /* Auth Container */
+        #auth-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background-color: var(--card-background);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #auth-container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--primary-color);
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .success-message {
+            color: #2a9d8f;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Lightbox */
+        #lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #lightbox-img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 5px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .message {
+                max-width: 85%;
+            }
+        }
+
+        /* Status Bar */
+        #status {
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            color: var(--gray-color);
+            background-color: var(--light-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Search Results */
+        #search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--light-color);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Hidden elements */
+        #fileInput {
+            display: none;
+        }
+
+        /* Tab content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Language selector */
+        #language-selector {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: white;
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 </head>
 <body>
-<div id="chat-container">
-    <div id="status">Connecting...</div>
-    <div id="messages"></div>
-    <div id="input-area">
-        <input id="messageInput" type="text" placeholder="Type a message and press Enter..." />
-        <button id="sendBtn">Send</button>
+<div id="lightbox" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="" alt="Full size">
+</div>
+
+<div id="auth-container">
+    <h2 data-i18n="login_title">登录 / 注册</h2>
+    <div id="error-msg" class="error-message"></div>
+    <div class="form-group">
+        <input id="username" type="text" class="form-control" placeholder="用户名" data-i18n-placeholder="username_placeholder">
+    </div>
+    <div class="form-group">
+        <input id="password" type="password" class="form-control" placeholder="密码" data-i18n-placeholder="password_placeholder">
+    </div>
+    <button onclick="login()" class="btn btn-primary btn-block" data-i18n="login_btn">登录</button>
+    <button onclick="register()" class="btn btn-block" style="margin-top: 10px;" data-i18n="register_btn">注册</button>
+</div>
+
+<div id="chat-app" style="display: none;">
+    <div class="app-header">
+        <div class="app-title">聊天室</div>
+        <div class="header-controls">
+            <select id="language-selector" onchange="changeLanguage(this.value)">
+                <option value="en">English</option>
+                <option value="zh" selected>中文</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3 data-i18n="profile_title">我的资料</h3>
+                <div class="form-group">
+                    <label data-i18n="nickname_placeholder">昵称</label>
+                    <input id="profile-nickname" class="form-control" placeholder="昵称" data-i18n-placeholder="nickname_placeholder">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="bio_placeholder">简介</label>
+                    <textarea id="profile-bio" class="form-control" placeholder="简介" data-i18n-placeholder="bio_placeholder" rows="3"></textarea>
+                </div>
+                <button onclick="saveProfile()" class="btn btn-primary btn-block" data-i18n="save_btn">保存</button>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 data-i18n="friends_title">好友列表</h3>
+                <div class="form-group">
+                    <input id="friend-target" class="form-control" placeholder="输入用户名添加" data-i18n-placeholder="friend_add_placeholder">
+                </div>
+                <button onclick="addFriend()" class="btn btn-primary btn-block" data-i18n="add_btn">添加</button>
+                <div class="friends-list" id="friends-list"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 data-i18n="room_settings_title">房间设置</h3>
+                <div class="form-group">
+                    <label data-i18n="announcement_placeholder">公告</label>
+                    <textarea id="room-announcement" class="form-control" placeholder="公告" data-i18n-placeholder="announcement_placeholder" rows="3"></textarea>
+                </div>
+                <button onclick="updateAnnouncement()" class="btn btn-primary btn-block" data-i18n="update_announcement_btn">更新公告</button>
+                
+                <h4 style="margin-top: 20px;" data-i18n="kick_member_title">踢出成员</h4>
+                <div class="form-group">
+                    <input id="kick-target" class="form-control" placeholder="输入用户名踢出" data-i18n-placeholder="kick_placeholder">
+                </div>
+                <button onclick="kickMember()" class="btn btn-block" style="background-color: var(--danger-color); color: white;" data-i18n="kick_btn">踢出</button>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div id="status" data-i18n="status_connecting">连接中...</div>
+            <div class="chat-header">
+                <div class="chat-title" id="current-room-title">大厅</div>
+                <div></div> <!-- Spacer for alignment -->
+            </div>
+            
+            <div id="messages" class="chat-messages"></div>
+            
+            <div class="chat-input-area">
+                <div class="input-group">
+                    <input type="file" id="fileInput">
+                    <button id="uploadBtn" class="upload-button" title="上传文件">📎</button>
+                    <input id="messageInput" type="text" class="message-input" placeholder="输入消息... (尝试 '@Bot help')" data-i18n-placeholder="message_placeholder">
+                    <button id="sendBtn" class="send-button">➤</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+    const translations = {
+        en: {
+            login_title: "Login / Register",
+            username_placeholder: "Username",
+            password_placeholder: "Password",
+            login_btn: "Login",
+            register_btn: "Register",
+            status_connecting: "Connecting...",
+            message_placeholder: "Type a message... (Try '@Bot help')",
+            send_btn: "Send",
+            search_placeholder: "Search messages...",
+            search_btn: "Search",
+            tab_profile: "Profile",
+            tab_friends: "Friends",
+            tab_room: "Room Settings",
+            profile_title: "My Profile",
+            nickname_placeholder: "Nickname",
+            bio_placeholder: "Bio",
+            save_btn: "Save",
+            friends_title: "Friends",
+            friend_add_placeholder: "Username to add",
+            add_btn: "Add",
+            room_settings_title: "Room Settings",
+            announcement_placeholder: "Announcement",
+            update_announcement_btn: "Update Announcement",
+            kick_member_title: "Kick Member",
+            kick_placeholder: "Username to kick",
+            kick_btn: "Kick",
+            status_connected: "Connected as ",
+            status_error: "Connection error: ",
+            upload_failed: "Upload failed",
+            upload_error: "Upload error",
+            profile_saved: "Profile saved!",
+            profile_save_failed: "Failed to save profile",
+            request_sent: "Request sent!",
+            request_failed: "Failed to send request",
+            switched_chat: "Switched to chat with ",
+            announcement_updated: "Announcement updated",
+            announcement_failed: "Failed to update",
+            member_kicked: "Member kicked",
+            kick_failed: "Failed to kick",
+            no_results: "No results found.",
+            current_room: "Current room: "
+        },
+        zh: {
+            login_title: "登录 / 注册",
+            username_placeholder: "用户名",
+            password_placeholder: "密码",
+            login_btn: "登录",
+            register_btn: "注册",
+            status_connecting: "连接中...",
+            message_placeholder: "输入消息... (尝试 '@Bot help')",
+            send_btn: "发送",
+            search_placeholder: "搜索消息...",
+            search_btn: "搜索",
+            tab_profile: "个人资料",
+            tab_friends: "好友",
+            tab_room: "房间设置",
+            profile_title: "我的资料",
+            nickname_placeholder: "昵称",
+            bio_placeholder: "简介",
+            save_btn: "保存",
+            friends_title: "好友列表",
+            friend_add_placeholder: "输入用户名添加",
+            add_btn: "添加",
+            room_settings_title: "房间设置",
+            announcement_placeholder: "公告",
+            update_announcement_btn: "更新公告",
+            kick_member_title: "踢出成员",
+            kick_placeholder: "输入用户名踢出",
+            kick_btn: "踢出",
+            status_connected: "已连接: ",
+            status_error: "连接错误: ",
+            upload_failed: "上传失败",
+            upload_error: "上传错误",
+            profile_saved: "资料已保存!",
+            profile_save_failed: "保存资料失败",
+            request_sent: "请求已发送!",
+            request_failed: "发送请求失败",
+            switched_chat: "已切换到与此人的聊天: ",
+            announcement_updated: "公告已更新",
+            announcement_failed: "更新失败",
+            member_kicked: "成员已踢出",
+            kick_failed: "踢出失败",
+            no_results: "未找到结果。",
+            current_room: "当前房间: "
+        }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'zh';
+
+    function changeLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+        applyLanguage();
+    }
+
+    function applyLanguage() {
+        document.getElementById('language-selector').value = currentLang;
+        const t = translations[currentLang];
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key]) el.textContent = t[key];
+        });
+
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (t[key]) el.placeholder = t[key];
+        });
+    }
+
+    // Apply language on load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default language to Chinese
+        currentLang = 'zh';
+        applyLanguage();
+    });
+
+    const authContainer = document.getElementById('auth-container');
+    const chatApp = document.getElementById('chat-app');
+    const errorMsg = document.getElementById('error-msg');
     const statusEl = document.getElementById('status');
     const messagesEl = document.getElementById('messages');
     const inputEl = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const currentRoomTitle = document.getElementById('current-room-title');
 
-    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const wsUrl = protocol + window.location.host + '/ws/chat';
-    const socket = new WebSocket(wsUrl);
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchResults = document.getElementById('search-results');
 
-    socket.onopen = function () {
-        statusEl.textContent = 'Connected to ' + wsUrl;
-    };
+    let stompClient = null;
+    let token = null;
+    let currentUser = null;
+    let currentRoomId = 'room_general'; // Default room
+    let currentSubscription = null;
 
-    socket.onmessage = function (event) {
-        const msgDiv = document.createElement('div');
-        msgDiv.textContent = event.data;
-        messagesEl.appendChild(msgDiv);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-    };
-
-    socket.onclose = function () {
-        statusEl.textContent = 'Disconnected';
-    };
-
-    socket.onerror = function () {
-        statusEl.textContent = 'Error occurred';
-    };
-
-    function sendMessage() {
-        const text = inputEl.value.trim();
-        if (!text) return;
-        if (socket.readyState === WebSocket.OPEN) {
-            socket.send(text);
-            inputEl.value = '';
+    // Event listeners
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            uploadFile(this.files[0]);
         }
-    }
+    });
 
     sendBtn.addEventListener('click', sendMessage);
     inputEl.addEventListener('keyup', function (e) {
@@ -68,7 +708,341 @@
             sendMessage();
         }
     });
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function sendMessage() {
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        if (stompClient && stompClient.connected) {
+            const payload = JSON.stringify({
+                content: text,
+                type: 'GROUP',
+                contentType: 'TEXT',
+                roomId: currentRoomId || 'room_general'  // 确保即使currentRoomId为空也有默认值
+            });
+            stompClient.send('/app/chat.message', {}, payload);
+            inputEl.value = '';
+        } else {
+            alert('未连接到服务器');
+        }
+    }
+
+    // Upload logic: after successful upload, send message over STOMP
+    async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const cType = data.fileType.startsWith('image/') ? 'IMAGE' : 'FILE';
+                const payload = JSON.stringify({ 
+                    content: data.url, 
+                    type: 'GROUP', 
+                    contentType: cType, 
+                    roomId: currentRoomId || 'room_general'  // 确保即使currentRoomId为空也有默认值
+                });
+                if (stompClient && stompClient.connected) {
+                    stompClient.send('/app/chat.message', {}, payload);
+                } else {
+                    console.warn('Upload complete but STOMP not connected');
+                }
+            } else {
+                alert(translations[currentLang].upload_failed);
+            }
+        } catch (e) {
+            console.error(e);
+            alert(translations[currentLang].upload_error);
+        }
+    }
+
+    async function register() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            if (response.ok) {
+                errorMsg.className = 'success-message';
+                errorMsg.textContent = '注册成功！请登录。';
+            } else {
+                const text = await response.text();
+                errorMsg.className = 'error-message';
+                errorMsg.textContent = '注册失败: ' + text;
+            }
+        } catch (e) {
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = '错误: ' + e;
+        }
+    }
+
+    async function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                token = data.token;
+                currentUser = data.username;
+                authContainer.style.display = 'none';
+                chatApp.style.display = 'flex';
+                connectWebSocket();
+            } else {
+                errorMsg.className = 'error-message';
+                errorMsg.textContent = '登录失败';
+            }
+        } catch (e) {
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = '错误: ' + e;
+        }
+    }
+
+    function subscribeToRoom(roomId) {
+        if (!stompClient || !stompClient.connected) return;
+        // unsubscribe previous
+        try {
+            if (currentSubscription) currentSubscription.unsubscribe();
+        } catch (e) { /* ignore */ }
+
+        const topic = '/topic/room.' + roomId;
+        currentSubscription = stompClient.subscribe(topic, function (message) {
+            try {
+                const msg = JSON.parse(message.body);
+                displayMessage(msg);
+            } catch (e) {
+                console.error('Error parsing STOMP message', e);
+            }
+        });
+        
+        // Update room title
+        currentRoomTitle.textContent = roomId === 'room_general' ? '大厅' : roomId;
+    }
+
+    function displayMessage(msg) {
+        const msgDiv = document.createElement('div');
+        
+        // Determine message type
+        if (msg.from === 'Bot') {
+            msgDiv.className = 'message message-bot';
+        } else if (msg.senderName === currentUser) {
+            msgDiv.className = 'message message-user';
+        } else {
+            msgDiv.className = 'message message-other';
+        }
+
+        // Create message header
+        const msgHeader = document.createElement('div');
+        msgHeader.className = 'message-header';
+        
+        const sender = document.createElement('div');
+        sender.className = 'message-sender';
+        sender.textContent = msg.senderName || msg.from || '未知用户';
+        
+        const time = document.createElement('div');
+        time.className = 'message-time';
+        time.textContent = formatTime(msg.timestamp);
+        
+        msgHeader.appendChild(sender);
+        msgHeader.appendChild(time);
+        
+        // Create message content
+        const msgContent = document.createElement('div');
+        msgContent.className = 'message-content';
+        
+        if (msg.contentType === 'IMAGE') {
+            const img = document.createElement('img');
+            img.src = msg.content;
+            img.className = 'message-image';
+            img.onclick = () => { lightboxImg.src = msg.content; lightbox.style.display = 'flex'; };
+            msgContent.appendChild(img);
+        } else if (msg.contentType === 'FILE') {
+            const link = document.createElement('a');
+            link.href = msg.content;
+            link.target = '_blank';
+            link.textContent = '📎 ' + (msg.content.split('/').pop() || '文件');
+            msgContent.appendChild(link);
+        } else {
+            msgContent.textContent = msg.content;
+        }
+        
+        msgDiv.appendChild(msgHeader);
+        msgDiv.appendChild(msgContent);
+        
+        messagesEl.appendChild(msgDiv);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function connectWebSocket() {
+        // Use SockJS + STOMP to match Spring's WebSocketConfig (registry.addEndpoint("/ws")).
+        const socket = new SockJS('/ws?token=' + (token || ''));
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function () {
+            statusEl.textContent = translations[currentLang].status_connected + (currentUser || '');
+            console.log('STOMP connected');
+
+            // First notify server that this client has joined so server can set session attributes (presence/join)
+            try {
+                stompClient.send('/app/chat.join', {}, JSON.stringify({ username: currentUser, roomId: currentRoomId }));
+            } catch (e) {
+                console.warn('Failed to send join message', e);
+            }
+
+            // Subscribe to the initial room slightly after join to give server time to process
+            setTimeout(() => subscribeToRoom(currentRoomId), 150);
+        }, function (error) {
+            statusEl.textContent = translations[currentLang].status_error + error;
+            console.error('STOMP connection error', error);
+            if (error && error.indexOf && error.indexOf('401') !== -1) {
+                alert('会话已过期，请重新登录。');
+                location.reload();
+            }
+        });
+    }
+
+    async function loadProfile() {
+        try {
+            const res = await fetch('/api/users/' + currentUser, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const user = await res.json();
+                document.getElementById('profile-nickname').value = user.nickname || '';
+                document.getElementById('profile-bio').value = user.bio || '';
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function saveProfile() {
+        const nickname = document.getElementById('profile-nickname').value;
+        const bio = document.getElementById('profile-bio').value;
+        try {
+            const res = await fetch('/api/users/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ nickname, bio })
+            });
+            if (res.ok) alert(translations[currentLang].profile_saved);
+            else alert(translations[currentLang].profile_save_failed);
+        } catch (e) { console.error(e); }
+    }
+
+    async function addFriend() {
+        const target = document.getElementById('friend-target').value;
+        if (!target) return;
+        try {
+            const res = await fetch('/api/friends/request/' + target, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) alert(translations[currentLang].request_sent);
+            else alert(translations[currentLang].request_failed);
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadFriends() {
+        try {
+            const res = await fetch('/api/friends', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const friends = await res.json();
+                const list = document.getElementById('friends-list');
+                list.innerHTML = '';
+                friends.forEach(f => {
+                    const div = document.createElement('div');
+                    div.className = 'friend-item';
+                    
+                    const info = document.createElement('div');
+                    info.className = 'friend-info';
+                    info.textContent = f.username + (f.nickname ? ` (${f.nickname})` : '');
+                    div.appendChild(info);
+                    
+                    const actions = document.createElement('div');
+                    actions.className = 'friend-actions';
+                    
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-primary';
+                    btn.textContent = '聊天';
+                    btn.onclick = () => startPrivateChat(f.username);
+                    actions.appendChild(btn);
+                    
+                    div.appendChild(actions);
+                    list.appendChild(div);
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function startPrivateChat(otherUser) {
+        try {
+            const res = await fetch(`/api/rooms/private?with=${otherUser}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const room = await res.json();
+                currentRoomId = room.roomId;
+                messagesEl.innerHTML = ''; // Clear messages
+                alert(translations[currentLang].switched_chat + otherUser);
+                // Subscribe to the new room topic
+                if (stompClient && stompClient.connected) {
+                    subscribeToRoom(currentRoomId);
+                }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function updateAnnouncement() {
+        const text = document.getElementById('room-announcement').value;
+        try {
+            const res = await fetch(`/api/rooms/${currentRoomId}/announcement`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: text
+            });
+            if (res.ok) alert(translations[currentLang].announcement_updated);
+            else alert(translations[currentLang].announcement_failed);
+        } catch (e) { console.error(e); }
+    }
+
+    async function kickMember() {
+        const target = document.getElementById('kick-target').value;
+        if (!target) return;
+        try {
+            const res = await fetch(`/api/rooms/${currentRoomId}/members/${target}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) alert(translations[currentLang].member_kicked);
+            else alert(translations[currentLang].kick_failed);
+        } catch (e) { console.error(e); }
+    }
+
+    // Load profile and friends when the app starts
+    setTimeout(() => {
+        loadProfile();
+        loadFriends();
+    }, 1000);
 </script>
 </body>
 </html>
-
