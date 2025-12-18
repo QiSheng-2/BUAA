@@ -1,43 +1,14 @@
 server:
-  port: ${SERVER_PORT:8081}
+  port: 8080
 
 spring:
   application:
     name: chatroom
-
-  # Redis 配置（可通过环境变量覆盖）
   redis:
-    host: ${SPRING_REDIS_HOST:localhost}
-    port: ${SPRING_REDIS_PORT:6379}
-
-  # 数据源配置（使用环境变量占位，便于 docker-compose 或 CI/CD 覆盖）
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/chatroom_db?useSSL=false&serverTimezone=UTC&characterEncoding=utf-8}
-    username: ${SPRING_DATASOURCE_USERNAME:chatuser}
-    password: ${SPRING_DATASOURCE_PASSWORD:K9@xQ3#pT7$}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-  # JPA / Hibernate
-  jpa:
-    hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
-    properties:
-      hibernate:
-        format_sql: true
-
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-
-jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970} # 256-bit secret
-  expiration: 86400000 # 24 hours
-
-# DEBUG HELPER: disable JWT requirement for websocket handshake during local debugging
-app:
-  websocket:
-    require-jwt: false
+    host: localhost
+    port: 6379
 
 logging:
   level:
     com.example.chatroom: INFO
+

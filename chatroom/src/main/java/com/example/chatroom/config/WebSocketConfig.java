@@ -1,31 +1,22 @@
 package com.example.chatroom.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.chatroom.service.MessageBroadcastService;
+import com.example.chatroom.service.RedisMessagePublisher;
+import com.example.chatroom.websocket.ChatEndpoint;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 
 @Configuration
-@EnableWebSocketMessageBroker
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+public class WebSocketConfig {
 
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // 前端连接的 WebSocket 端点（支持 SockJS 回退）
-        registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // 生产环境应限制来源
-                .withSockJS();
-    }
-
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Use the simple in-memory broker for development/testing.
-        // This avoids the need for an external STOMP broker and Reactor Netty.
-        registry.enableSimpleBroker("/topic", "/queue");
-
-        registry.setApplicationDestinationPrefixes("/app");
-        registry.setUserDestinationPrefix("/user");
+    @Bean
+    public ServerEndpointExporter serverEndpointExporter(MessageBroadcastService messageBroadcastService,
+                                                         RedisMessagePublisher redisMessagePublisher) {
+        // Wire Spring beans into the static setters of ChatEndpoint
+        ChatEndpoint.setMessageBroadcastService(messageBroadcastService);
+        ChatEndpoint.setRedisMessagePublisher(redisMessagePublisher);
+        return new ServerEndpointExporter();
     }
 }
+
