@@ -13,13 +13,14 @@ public class ChatMessageDto {
 
     public ChatMessageDto() {}
 
-    public ChatMessageDto(String content, String type, String senderId, String senderName, String targetId, Long timestamp) {
+    public ChatMessageDto(String content, String type, String senderId, String senderName, String targetId, Long timestamp, String contentType) {
         this.content = content;
         this.type = type;
         this.senderId = senderId;
         this.senderName = senderName;
         this.targetId = targetId;
         this.timestamp = timestamp;
+        this.contentType = contentType;
     }
 
     public String getContent() { return content; }

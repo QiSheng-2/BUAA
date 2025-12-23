@@ -1,14 +1,13 @@
-/*
 package com.example.chatroom.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-//@Configuration
+@Configuration
 public class StaticResourceConfig implements WebMvcConfigurer {
 
-    //@Override
+    @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Ensure static resources under classpath:/static/ are served
         registry.addResourceHandler("/**")
@@ -22,4 +21,3 @@ public class StaticResourceConfig implements WebMvcConfigurer {
                 .setCachePeriod(3600);
     }
 }
-*/

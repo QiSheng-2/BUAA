@@ -1,6 +1,6 @@
-/*
 package com.example.chatroom.service;
 
+import com.example.chatroom.dto.ChatMessageDto;
 import com.example.chatroom.entity.ChatRoom;
 import com.example.chatroom.repository.RoomMemberRepository;
 import com.example.chatroom.repository.RoomRepository;
@@ -15,24 +15,27 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-//@Service
+import com.example.chatroom.entity.ChatRoom;
+
+@Service
 public class RoomService {
 
     private final RoomRepository roomRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    //@Autowired
+    @Autowired
     private RoomMemberRepository roomMemberRepository;
+
+    @Autowired
+    private MessageService messageService;
 
     public RoomService(RoomRepository roomRepository, @Lazy SimpMessagingTemplate messagingTemplate) {
         this.roomRepository = roomRepository;
         this.messagingTemplate = messagingTemplate;
     }
 
-    *//**
-     * 初始化默认聊天大厅
-     *//*
-    //@PostConstruct
+    //初始化默认聊天大厅
+    @PostConstruct
     public void initDefaultRoom() {
         // 检查是否存在默认聊天大厅，如果不存在则创建
         ChatRoom defaultRoom = roomRepository.findByRoomId("room_general");
@@ -54,7 +57,7 @@ public class RoomService {
         return roomRepository.findByType("PUBLIC");
     }
 
-    //@Transactional
+    @Transactional
     public ChatRoom createRoom(String name, String creatorId, String type, String password) {
         String roomId = "room_" + UUID.randomUUID().toString().replace("-", "");
         ChatRoom room = new ChatRoom(roomId, name, type, creatorId);
@@ -118,5 +121,30 @@ public class RoomService {
         // WebSocket 通知被踢用户
         messagingTemplate.convertAndSendToUser(targetUserId, "/queue/kicked", roomId);
     }
+
+    @Transactional(readOnly = true)
+    public String getAnnouncement(String roomId) {
+        ChatRoom room = roomRepository.findByRoomId(roomId);
+        if (room == null) {
+            return "";
+        }
+        return room.getAnnouncement() != null ? room.getAnnouncement() : "";
+    }
+
+    @Transactional
+    public void updateAnnouncement(String roomId, String announcement) {
+        ChatRoom room = roomRepository.findByRoomId(roomId);
+        if (room == null) {
+            throw new RuntimeException("房间不存在: " + roomId);
+        }
+
+        room.setAnnouncement(announcement);
+        roomRepository.save(room);
+
+        if (messageService != null) {
+            String messageContent = "📢 系统公告: " + announcement;
+            messageService.sendMessage(new ChatMessageDto(messageContent,"SYSTEM","System","System",roomId,System.currentTimeMillis(),"TEXT"));
+            //System.out.println("公告消息已发送到房间 " + roomId);
+        }
+    }
 }
-*/

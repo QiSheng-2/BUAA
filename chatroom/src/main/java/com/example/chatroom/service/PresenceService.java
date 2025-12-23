@@ -1,4 +1,3 @@
-/*
 package com.example.chatroom.service;
 
 import com.example.chatroom.dto.PresenceMessage;
@@ -13,14 +12,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-//@Service
+@Service
 public class PresenceService {
 
     private final Map<String, PresenceMessage> onlineUsers = new ConcurrentHashMap<>();
     private final SimpMessagingTemplate messagingTemplate;
 
-    //@Autowired
-    //@Lazy
+    @Autowired
+    @Lazy
     private FriendService friendService;
 
     public PresenceService(SimpMessagingTemplate messagingTemplate) {
@@ -77,7 +76,6 @@ public class PresenceService {
                 // In ChatController.join: userId is generated from hash if null.
                 // Let's try to use username if available.
                 // But userJoined takes userId and username.
-
                 // Let's use the username for friend lookup
                 String username = onlineUsers.get(userId) != null ? onlineUsers.get(userId).getUsername() : null;
 
@@ -96,4 +94,3 @@ public class PresenceService {
         }
     }
 }
-*/

@@ -29,7 +29,6 @@ public class Message {
     @Column(name = "target_id", nullable = false)
     private String targetId; // roomId or receiverId
 
-    // ✅ 新增：用于全文搜索（避免对 content 做 LIKE 查询）
     @Column(columnDefinition = "TEXT")
     private String searchableContent; // 存纯文本，去除 HTML/表情等
 

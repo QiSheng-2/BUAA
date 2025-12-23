@@ -1,10 +1,12 @@
 package com.example.chatroom.service;
 
 import com.example.chatroom.dto.ChatMessageDto;
-import com.example.chatroom.entity.Message;
-import com.example.chatroom.entity.MessageReceipt;
+import com.example.chatroom.entity.*;
+import com.example.chatroom.repository.ChatMessageRepository;
 import com.example.chatroom.repository.MessageReceiptRepository;
 import com.example.chatroom.repository.MessageRepository;
+import com.example.chatroom.repository.UserRoomStatusRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,6 +28,15 @@ public class MessageService {
     private final MessageReceiptRepository receiptRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private ChatMessageRepository messageRepository;
+
+    @Autowired
+    private UserRoomStatusRepository userRoomStatusRepository;
+
+    @Autowired
+    private ChatMessageRepository chatMessageRepository;
 
     public MessageService(MessageRepository repository,
                           MessageReceiptRepository receiptRepository,
@@ -70,6 +82,19 @@ public class MessageService {
             // 如果不在事务中，直接发布事件
             eventPublisher.publishEvent(new MessageSavedEvent(saved, dto));
         }
+
+        ChatMessage message = new ChatMessage();
+        message.setRoomId(dto.getTargetId()); // 房间ID
+        message.setSenderId(dto.getSenderId()); // 发送者ID
+        message.setSenderName(dto.getSenderName()); // 发送者名称
+        message.setContent(dto.getContent()); // 内容
+        message.setContentType(dto.getContentType()); // 内容类型
+        message.setType(dto.getType()); // 消息类型
+        message.setCreatedAt(LocalDateTime.now()); // 创建时间
+
+        messageRepository.save(message);
+        //System.out.println("消息已保存到数据库: " + dto.getContent());
+
 
         return saved;
     }
@@ -121,5 +146,81 @@ public class MessageService {
     public void sendMessage(ChatMessageDto dto) {
         // persist
         saveMessage(dto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatMessageDto> getHistoryMessages(String roomId, int limit) {
+        List<ChatMessage> messages = messageRepository.findTop50ByRoomIdOrderByCreatedAtDesc(roomId);
+
+        return messages.stream().map(msg -> {
+            ChatMessageDto dto = new ChatMessageDto();
+            dto.setContent(msg.getContent());
+            dto.setContentType(msg.getContentType());
+            dto.setType(msg.getType());
+            dto.setSenderId(msg.getSenderId());
+            dto.setSenderName(msg.getSenderName());
+            dto.setTargetId(msg.getRoomId());
+            dto.setTimestamp(msg.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
+    public void markAsRead(String userId, String roomId) {
+        UserRoomStatusId id = new UserRoomStatusId(userId, roomId);
+        UserRoomStatus status = userRoomStatusRepository.findById(id).orElse(null);
+
+        if (status != null) {
+            status.setUnreadCount(0);
+            status.setLastReadAt(LocalDateTime.now());
+
+            // 设置最后阅读的消息ID
+            List<ChatMessage> latestMessages = chatMessageRepository.findTop1ByRoomIdOrderByCreatedAtDesc(roomId);
+            if (!latestMessages.isEmpty()) {
+                status.setLastReadMessageId(latestMessages.get(0).getId());
+            }
+
+            userRoomStatusRepository.save(status);
+        }
+    }
+
+    // 获取用户的所有私聊未读状态
+    public List<UserRoomStatus> getPrivateChatUnreadStatus(String userId) {
+        return userRoomStatusRepository.findPrivateChatStatusByUserId(userId);
+    }
+
+    // 新消息到达时，增加接收者的未读计数
+    @Transactional
+    public void incrementUnreadCount(String receiverId, String roomId) {
+        userRoomStatusRepository.incrementUnreadCount(receiverId, roomId);
+    }
+
+    // 确保用户房间状态存在（在创建房间时调用）
+    public void ensureUserRoomStatus(String userId, String roomId) {
+        UserRoomStatusId id = new UserRoomStatusId(userId, roomId);
+        if (!userRoomStatusRepository.existsById(id)) {
+            UserRoomStatus status = new UserRoomStatus();
+            status.setUserId(userId);
+            status.setRoomId(roomId);
+            status.setUnreadCount(0);
+            status.setLastReadAt(LocalDateTime.now());
+            userRoomStatusRepository.save(status);
+        }
+    }
+
+    @Transactional
+    public void saveMessageAndIncrementUnread(com.example.chatroom.dto.ChatMessage message) {
+        if (message.getRoomId() != null && message.getRoomId().startsWith("private_")) {
+            String roomId = message.getRoomId();
+            String senderId = message.getFrom();
+
+            String[] parts = roomId.split("_");
+            String receiverId = parts[1].equals(senderId) ? parts[2] : parts[1];
+
+            ensureUserRoomStatus(receiverId, roomId);
+
+            userRoomStatusRepository.incrementUnreadCount(receiverId, roomId);
+
+            //System.out.println("未读计数+1: 发送者=" + senderId +receiverId+ ", 房间=" + roomId);
+        }
     }
 }

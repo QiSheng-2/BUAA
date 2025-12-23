@@ -1,3 +1,4 @@
+/*
 package com.example.chatroom.service;
 
 import com.example.chatroom.entity.ChatMessage;
@@ -28,3 +29,4 @@ public class ChatMessageService {
         repository.save(m);
     }
 }
+*/
