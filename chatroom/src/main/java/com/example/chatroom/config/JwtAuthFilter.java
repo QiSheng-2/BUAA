@@ -50,10 +50,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        System.out.println("=== JwtAuthFilter ===");
-        System.out.println("请求方法: " + request.getMethod());
-        System.out.println("请求路径: " + request.getRequestURI());
-        System.out.println("Authorization: " + request.getHeader("Authorization"));
+        //System.out.println("=== JwtAuthFilter ===");
+        //System.out.println("请求方法: " + request.getMethod());
+        //System.out.println("请求路径: " + request.getRequestURI());
+        //System.out.println("Authorization: " + request.getHeader("Authorization"));
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -62,7 +62,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         jwt = authHeader.substring(7);
         username = jwtService.extractUsername(jwt);
-        System.out.println("提取到的用户名: " + username);
+        //System.out.println("提取到的用户名: " + username);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserService userServiceLocal = getUserService();

@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .anyRequest().permitAll()
                 )
-                // ✅ 注册 JwtAuthFilter，放在 UsernamePasswordAuthenticationFilter 之前
+                // 注册 JwtAuthFilter，放在 UsernamePasswordAuthenticationFilter 之前
                 .addFilterBefore(
                         new JwtAuthFilter(jwtService, applicationContext),
                         UsernamePasswordAuthenticationFilter.class

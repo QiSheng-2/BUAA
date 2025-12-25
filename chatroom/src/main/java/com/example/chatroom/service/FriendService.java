@@ -96,8 +96,8 @@ public class FriendService {
 
     @Transactional(readOnly = true)
     public List<FriendRequestDto> getPendingRequests(String username) {
-        System.out.println("=== 查询待处理的好友申请 ===");
-        System.out.println("目标用户名: " + username);
+        //System.out.println("=== 查询待处理的好友申请 ===");
+        //System.out.println("目标用户名: " + username);
 
         List<Friendship> pendingRequests = friendshipRepo.findByFriendIdAndStatus(
                 username,
@@ -135,7 +135,7 @@ public class FriendService {
                 .collect(Collectors.toList());
 
         //System.out.println("最终返回的 DTO 数量: " + result.size());
-        System.out.println("=== 查询完成 ===");
+        //System.out.println("=== 查询完成 ===");
 
         return result;
     }
