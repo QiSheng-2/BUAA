@@ -1,150 +1,270 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <script>
+        // 确保每次加载新资源
+        document.addEventListener('DOMContentLoaded', function() {
+            const scripts = document.querySelectorAll('script[src]');
+            scripts.forEach(script => {
+                const src = script.src;
+                if (src.includes('index')) {
+                    script.src = src.split('?')[0] + '?v=' + Date.now();
+                }
+            });
+            // 保留你已有的各分区折叠初始化
+            initCollapsibleSections();
+
+            // 新增：初始化整体侧边栏折叠
+            initSidebarToggle();
+        });
+    </script>
+
     <meta charset="UTF-8">
     <title>聊天室</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* 保留原始变量，所有尺寸改为相对于视口 */
         :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3f37c9;
-            --success-color: #4cc9f0;
-            --danger-color: #f72585;
-            --warning-color: #f8961e;
-            --light-color: #f8f9fa;
-            --dark-color: #212529;
-            --gray-color: #6c757d;
-            --border-color: #dee2e6;
-            --background-color: #f0f2f5;
-            --card-background: #ffffff;
-            --message-bg-user: #d1f0d7;
-            --message-bg-other: #ffffff;
-            --message-bg-bot: #e6fffa;
+            /* 红色系 - 保持不变 */
+            --danger-color: #f72585;          /* 踢出按钮、未读徽章等 */
+
+            /* 现代黑白灰配色 */
+            --primary-color: #5c5c5c;         /* 深灰（主色调） */
+            --secondary-color: #1a1a1a;       /* 更深的灰（悬停/强调） */
+            --success-color: #6c6c6c;         /* 中灰（成功状态） */
+            --warning-color: #8a8a8a;         /* 中灰（警告状态） */
+
+            /* 灰度层次 */
+            --light-color: #f5f5f5;           /* 极浅灰 */
+            --dark-color: #1a1a1a;            /* 深灰（文字） */
+            --gray-color: #8a8a8a;            /* 中灰（辅助文字） */
+            --border-color: #e0e0e0;          /* 浅灰边框 */
+            --background-color: #fafafa;      /* 极浅灰背景 */
+            --card-background: #ffffff;       /* 纯白卡片 */
+
+            /* 消息气泡灰度 */
+            --message-bg-user: #e8e8e8;       /* 用户消息浅灰 */
+            --message-bg-other: #ffffff;      /* 他人消息纯白 */
+            --message-bg-bot: #f0f0f0;        /* 机器人消息浅灰 */
+
+            /* 新增：基于视口的动态尺寸系统 */
+            --scale-factor: calc(1px + 0.02vw); /* 基础缩放单位 */
+            --header-height: calc(50 * var(--scale-factor)); /* 自适应头部 */
+            --sidebar-width: calc(250 * var(--scale-factor)); /* 自适应侧边栏 */
+            --base-font: calc(12 * var(--scale-factor)); /* 基础字体大小 */
+            --base-padding: calc(10 * var(--scale-factor)); /* 基础内边距 */
+
+            --glass-bg: rgba(255, 255, 255, 0.25);      /* 玻璃背景 */
+            --glass-border: rgba(255, 255, 255, 0.4);   /* 玻璃边框 */
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); /* 玻璃阴影 */
+            --glass-blur: blur(12px);                    /* 模糊强度 */
+
+            /* 超大圆角 */
+            --radius-xl: 24px;  /* 大卡片 */
+            --radius-lg: 18px;  /* 按钮 */
+            --radius-md: 14px;  /* 输入框 */
+            --radius-sm: 10px;  /* 小元素 */
         }
 
+        /* 保留原始重置，增加字体平滑 */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
+        /* 关键：使用视口单位确保body始终充满 */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--background-color);
+            background: linear-gradient(135deg, var(--background-color) 0%, #e4e7eb 100%);
             color: var(--dark-color);
-            height: 100vh;
+            width: 100vw; /* 强制宽度100%视口 */
+            height: 100vh; /* 强制高度100%视口 */
             overflow: hidden;
+            font-size: var(--base-font);
         }
 
+        /* 认证容器：使用flex完全居中，尺寸基于视口 */
+        #auth-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5vw;
+            background: linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%); /* 更柔和的渐变 */
+        }
+
+        #auth-container h2 {
+            text-align: center;
+            margin-bottom: calc(20 * var(--scale-factor));
+            color: var(--primary-color);
+            font-size: calc(1.8em + 1vw); /* 动态字体 */
+        }
+
+        #auth-container > * {
+            width: 85%;
+            max-width: 35rem; /* 仅限制表单最大宽度 */
+        }
+
+        /* 主应用：强制充满视口，移除所有max-width限制 */
         #chat-app {
             display: flex;
             flex-direction: column;
+            width: 100vw;
             height: 100vh;
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: var(--card-background);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            max-width: none;
+            margin: 0;
+            background: var(--glass-bg);          /* ✅ 玻璃背景 */
+            backdrop-filter: var(--glass-blur);    /* ✅ 毛玻璃效果 */
+            -webkit-backdrop-filter: var(--glass-blur); /* Safari兼容 */
+            box-shadow: var(--glass-shadow);       /* ✅ 现代阴影 */
+            border-radius: 0;                      /* 全屏时不需要圆角 */
         }
 
-        /* Header Styles */
+        /* 头部：使用动态高度 */
         .app-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
+            padding: 0 calc(15 * var(--scale-factor));
+            height: var(--header-height);
+            min-height: 3rem; /* 最小高度保护 */
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 calc(2 * var(--scale-factor)) calc(5 * var(--scale-factor)) rgba(0, 0, 0, 0.1);
+            flex-shrink: 0; /* 防止被压缩 */
         }
 
         .app-title {
-            font-size: 1.5rem;
+            font-size: calc(1.5em + 0.5vw);
             font-weight: 600;
         }
 
         .header-controls {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: calc(15 * var(--scale-factor));
         }
 
-        /* Main Content Layout */
+        /* 主内容：使用flex分配空间 */
         .main-content {
             display: flex;
-            flex: 1;
-            overflow: hidden;
+            flex: 1; /* 占据剩余所有空间 */
+            min-height: 0; /* 修复flex overflow bug */
+            width: 100vw;
         }
 
-        /* Sidebar Styles */
+        /* 侧边栏：动态宽度，保持左右布局 */
         .sidebar {
-            width: 280px;
-            background-color: var(--card-background);
-            border-right: 1px solid var(--border-color);
+            width: var(--sidebar-width);
+            min-width: 15rem; /* 最小宽度保护 */
+            max-width: 20rem; /* 最大宽度限制 */
+            background: var(--glass-bg);          /* ✅ 玻璃背景 */
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-right: 1px solid var(--glass-border); /* ✅ 玻璃边框 */
             display: flex;
             flex-direction: column;
-            transition: all 0.3s ease;
+            flex-shrink: 0; /* 防止被压缩 */
+
+            height: calc(100vh - var(--header-height)); /* 减去头部高度 */
+            overflow-y: scroll; /* 关键：整体滚动 */
+            overflow-x: hidden; /* 防止横向溢出 */
+            position: relative;
+            border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
         }
 
         .sidebar-section {
-            padding: 15px;
-            border-bottom: 1px solid var(--border-color);
+            padding: var(--base-padding);
+            border-bottom: calc(1 * var(--scale-factor)) solid var(--border-color);
+            flex-shrink: 0;
         }
 
         .sidebar-section h3 {
-            margin-bottom: 10px;
+            margin-bottom: 0; /* 修改为0 */
+            margin: 0;
+            border-bottom: none;
             color: var(--primary-color);
-            font-size: 1rem;
+            font-size: calc(1em + 0.3vw);
+            flex-shrink: 0; /* 关键：防止被压缩 */
+        }
+
+        .sidebar-section h4 {
+            margin-top: calc(20 * var(--scale-factor));
+            font-size: calc(1em + 0.2vw);
+            flex-shrink: 0; /* 关键：防止被压缩 */
         }
 
         .sidebar-section:last-child {
             border-bottom: none;
-            flex: 1;
-            overflow-y: auto;
+            flex: 1; /* 填充剩余 */
+            min-height: 20vh; /* 防止塌陷 */
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: var(--base-padding);
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
+            margin-bottom: calc(5 * var(--scale-factor));
+            font-size: calc(0.9em + 0.1vw);
             color: var(--gray-color);
         }
 
         .form-control {
             width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 0.9rem;
+            padding: calc(8 * var(--scale-factor)) calc(12 * var(--scale-factor));
+            border: calc(1 * var(--scale-factor)) solid var(--border-color);
+            border-radius: calc(4 * var(--scale-factor));
+            font-size: calc(0.9em + 0.1vw);
             transition: border-color 0.2s;
+            font-family: inherit; /* 继承body的字体 */
         }
 
         .form-control:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+            box-shadow: 0 0 0 calc(2 * var(--scale-factor)) rgba(67, 97, 238, 0.2);
         }
 
         .btn {
-            padding: 8px 16px;
+            padding: calc(10 * var(--scale-factor)) calc(20 * var(--scale-factor));
             border: none;
-            border-radius: 4px;
+            border-radius: var(--radius-lg);      /* ✅ 大圆角 */
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: calc(0.9em + 0.1vw);
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all 0.3s ease;            /* ✅ 更流畅动画 */
+            background: var(--glass-bg);           /* ✅ 玻璃背景 */
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border); /* ✅ 玻璃边框 */
+            box-shadow: var(--glass-shadow);
+            color: var(--dark-color);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);          /* ✅ 悬浮上浮效果 */
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
         }
 
         .btn-primary {
-            background-color: var(--primary-color);
+            background: rgba(44, 44, 44, 0.8);    /* ✅ 半透明主色 */
             color: white;
+            border: 1px solid rgba(44, 44, 44, 0.5);
         }
 
         .btn-primary:hover {
-            background-color: var(--secondary-color);
+            background: rgba(26, 26, 26, 0.9);
         }
 
         .btn-block {
@@ -153,16 +273,15 @@
         }
 
         .friends-list {
-            max-height: 300px;
-            overflow-y: auto;
+            width: 100%;
         }
 
         .friend-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-color);
+            padding: var(--base-padding) 0;
+            border-bottom: calc(1 * var(--scale-factor)) solid var(--border-color);
         }
 
         .friend-item:last-child {
@@ -173,32 +292,36 @@
             flex: 1;
             display: flex;
             align-items: center;
+            word-break: break-word;
         }
 
         .friend-actions {
             display: flex;
-            gap: 5px;
+            gap: calc(5 * var(--scale-factor));
         }
 
-        /* Chat Area Styles */
+        /* 聊天区域：动态填充 */
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 0;
             overflow: hidden;
         }
 
         .chat-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
+            padding: var(--base-padding) calc(20 * var(--scale-factor));
+            border-bottom: calc(1 * var(--scale-factor)) solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .chat-title {
-            font-size: 1.2rem;
+            font-size: calc(1.2em + 0.3vw);
             font-weight: 500;
+            word-break: break-word;
         }
 
         .chat-actions {
@@ -209,11 +332,11 @@
         .btn-back {
             background-color: transparent;
             color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-            padding: 6px 12px;
-            border-radius: 4px;
+            border: calc(1 * var(--scale-factor)) solid var(--primary-color);
+            padding: calc(6 * var(--scale-factor)) calc(12 * var(--scale-factor));
+            border-radius: calc(4 * var(--scale-factor));
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: calc(0.9em + 0.1vw);
             transition: all 0.2s;
         }
 
@@ -222,80 +345,96 @@
             color: white;
         }
 
+        /* 消息容器：动态填充 */
         .chat-messages {
             flex: 1;
-            padding: 20px;
+            padding: var(--base-padding) calc(20 * var(--scale-factor));
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: var(--base-padding);
+            min-height: 0;
         }
 
+        /* 消息气泡：动态尺寸 */
         .message {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            position: relative;
+            max-width: min(70%, 45rem);
+            padding: calc(16 * var(--scale-factor)) calc(20 * var(--scale-factor));
+            border-radius: var(--radius-xl);        /* ✅ 超大圆角 */
+            box-shadow: var(--glass-shadow);         /* ✅ 玻璃阴影 */
             animation: fadeIn 0.3s ease;
-
-            /* 强制长文本自动换行 */
             word-wrap: break-word;
             overflow-wrap: break-word;
             word-break: break-word;
-        }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            /* ✅ 玻璃背景 - 根据消息类型 */
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
         }
 
         .message-user {
             align-self: flex-end;
-            background-color: var(--message-bg-user);
-            border-bottom-right-radius: 5px;
+            background: rgba(232, 232, 232, 0.4); /* ✅ 半透明用户消息 */
+            border-bottom-right-radius: var(--radius-sm);
         }
 
         .message-other {
             align-self: flex-start;
-            background-color: var(--message-bg-other);
-            border-bottom-left-radius: 5px;
+            background: var(--glass-bg);
+            border-bottom-left-radius: var(--radius-sm);
         }
 
         .message-bot {
             align-self: flex-start;
-            background-color: var(--message-bg-bot);
-            border-left: 4px solid #38b2ac;
-            border-bottom-left-radius: 5px;
+            background: rgba(240, 240, 240, 0.4);
+            border-left: 4px solid rgba(56, 178, 172, 0.6); /* ✅ 半透明边框 */
+            border-bottom-left-radius: var(--radius-sm);
+        }
+
+        /* 系统消息 */
+        .message-system {
+            align-self: center;
+            background: rgba(245, 245, 245, 0.5);   /* ✅ 半透明系统消息 */
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: calc(10 * var(--scale-factor)) calc(18 * var(--scale-factor));
+            font-size: calc(0.85em + 0.1vw);
+            color: var(--dark-color);
+            max-width: 80%;
+            text-align: center;
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            box-shadow: var(--glass-shadow);
         }
 
         .message-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
+            margin-bottom: calc(5 * var(--scale-factor));
         }
 
         .message-sender {
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: calc(0.9em + 0.1vw);
         }
 
         .message-time {
-            font-size: 0.75rem;
+            font-size: calc(0.75em + 0.1vw);
             color: var(--gray-color);
         }
 
         .message-content {
-            font-size: 1rem;
+            font-size: calc(1em + 0.1vw);
             line-height: 1.4;
-
             overflow-wrap: break-word;
             word-break: break-word;
         }
 
         .message-image {
             max-width: 100%;
-            border-radius: 10px;
+            border-radius: calc(10 * var(--scale-factor));
             cursor: pointer;
             transition: transform 0.2s;
         }
@@ -304,44 +443,58 @@
             transform: scale(1.02);
         }
 
+        /* 输入区域：动态尺寸 */
         .chat-input-area {
-            padding: 15px;
-            border-top: 1px solid var(--border-color);
+            padding: var(--base-padding);
+            border-top: calc(1 * var(--scale-factor)) solid var(--border-color);
             background-color: var(--card-background);
+            flex-shrink: 0;
         }
 
         .input-group {
             display: flex;
-            gap: 10px;
+            gap: calc(10 * var(--scale-factor));
+            align-items: center;
         }
 
-        .message-input {
-            flex: 1;
-            padding: 12px 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            font-size: 1rem;
+        .form-control, .message-input {
+            width: 100%;
+            padding: calc(12 * var(--scale-factor)) calc(16 * var(--scale-factor));
+            border: 1px solid var(--glass-border); /* ✅ 玻璃边框 */
+            border-radius: var(--radius-md);       /* ✅ 中等圆角 */
+            font-size: calc(0.9em + 0.1vw);
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: var(--glass-bg);           /* ✅ 玻璃背景 */
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); /* ✅ 内阴影 */
+        }
+
+        .form-control:focus, .message-input:focus {
             outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .message-input:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+            box-shadow: 0 0 0 3px rgba(44, 44, 44, 0.1); /* ✅ 更柔和的焦点环 */
+            background: rgba(255, 255, 255, 0.4); /* ✅ 聚焦时更亮 */
         }
 
-        .send-button {
-            background-color: var(--primary-color);
-            color: white;
+        .send-button,
+        .upload-button {
             border: none;
             border-radius: 50%;
-            width: 46px;
-            height: 46px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: background-color 0.2s;
+            width: calc(46 * var(--scale-factor));
+            height: calc(46 * var(--scale-factor));
+            flex-shrink: 0;
+        }
+
+        .send-button {
+            background-color: var(--primary-color);
+            color: white;
         }
 
         .send-button:hover {
@@ -351,59 +504,35 @@
         .upload-button {
             background-color: var(--light-color);
             color: var(--dark-color);
-            border: none;
-            border-radius: 50%;
-            width: 46px;
-            height: 46px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s;
         }
 
         .upload-button:hover {
             background-color: var(--border-color);
         }
 
-        /* Auth Container */
-        #auth-container {
-            max-width: 400px;
-            margin: 100px auto;
-            padding: 30px;
-            background-color: var(--card-background);
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        #auth-container h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--primary-color);
-        }
-
+        /* 错误/成功消息：动态尺寸 */
         .error-message {
             color: var(--danger-color);
-            margin-bottom: 15px;
+            margin-bottom: var(--base-padding);
             text-align: center;
-            font-size: 0.9rem;
+            font-size: calc(0.9em + 0.1vw);
         }
 
         .success-message {
             color: #2a9d8f;
-            margin-bottom: 15px;
+            margin-bottom: var(--base-padding);
             text-align: center;
-            font-size: 0.9rem;
+            font-size: calc(0.9em + 0.1vw);
         }
 
-        /* Lightbox */
+        /* 灯箱：始终充满 */
         #lightbox {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
@@ -413,50 +542,34 @@
         #lightbox-img {
             max-width: 90%;
             max-height: 90%;
-            border-radius: 5px;
+            border-radius: calc(5 * var(--scale-factor));
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .main-content {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-            }
-
-            .message {
-                max-width: 85%;
-            }
-        }
-
-        /* Status Bar */
+        /* 状态栏：动态尺寸 */
         #status {
-            padding: 8px 15px;
-            font-size: 0.85rem;
+            padding: calc(8 * var(--scale-factor)) calc(15 * var(--scale-factor));
+            font-size: calc(0.85em + 0.1vw);
             color: var(--gray-color);
             background-color: var(--light-color);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: calc(1 * var(--scale-factor)) solid var(--border-color);
         }
 
-        /* Search Results */
+        /* 搜索结果：动态尺寸 */
         #search-results {
-            max-height: 200px;
+            max-height: 30vh;
             overflow-y: auto;
-            margin-top: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
+            margin-top: var(--base-padding);
+            border: calc(1 * var(--scale-factor)) solid var(--border-color);
+            border-radius: calc(4 * var(--scale-factor));
             display: none;
+            background-color: var(--card-background);
         }
 
         .search-result-item {
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border-color);
+            padding: calc(8 * var(--scale-factor)) calc(12 * var(--scale-factor));
+            border-bottom: calc(1 * var(--scale-factor)) solid var(--border-color);
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: calc(0.9em + 0.1vw);
         }
 
         .search-result-item:hover {
@@ -467,12 +580,11 @@
             border-bottom: none;
         }
 
-        /* Hidden elements */
+        /* 隐藏元素 */
         #fileInput {
             display: none;
         }
 
-        /* Tab content */
         .tab-content {
             display: none;
         }
@@ -481,62 +593,440 @@
             display: block;
         }
 
-        /* Language selector */
+        /* 语言选择器：动态尺寸 */
         #language-selector {
-            padding: 5px;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
+            padding: calc(5 * var(--scale-factor));
+            border-radius: calc(4 * var(--scale-factor));
+            border: calc(1 * var(--scale-factor)) solid var(--border-color);
             background-color: white;
+            font-size: calc(0.9em + 0.1vw);
+            font-family: inherit;
         }
 
-        .message-system {
-            align-self: center;  /* 居中显示 */
-            background-color: #e6f7ff;
-            border: 1px solid #91d5ff;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-size: 0.85rem;
-            color: #096dd9;
-            max-width: 80%;
-            text-align: center;
-        }
-
-        /* 在 <style> 标签中添加 */
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        /* 退出按钮样式 */
+        /* 危险按钮：动态尺寸 */
         .btn-danger {
             background-color: var(--danger-color);
             color: white;
-            padding: 6px 12px;
+            padding: calc(6 * var(--scale-factor)) calc(12 * var(--scale-factor));
             border: none;
-            border-radius: 4px;
+            border-radius: calc(4 * var(--scale-factor));
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: calc(0.9em + 0.1vw);
             transition: background-color 0.2s;
         }
 
         .btn-danger:hover {
-            background-color: #d41e75; /* 更深的红色 */
+            background-color: #d41e75;
         }
 
+        /* 未读徽章：动态尺寸 */
         .unread-badge {
             background-color: var(--danger-color);
             color: white;
-            border-radius: 12px;
-            padding: 2px 8px;
-            font-size: 0.8rem;
-            margin-left: 8px;
+            border-radius: calc(12 * var(--scale-factor));
+            padding: calc(2 * var(--scale-factor)) calc(8 * var(--scale-factor));
+            font-size: calc(0.8em + 0.1vw);
+            margin-left: calc(8 * var(--scale-factor));
             font-weight: bold;
         }
+
+        /* 极小屏幕保护 */
+        @media (max-width: 320px) {
+            :root {
+                --scale-factor: 0.8px; /* 强制最小缩放 */
+            }
+        }
+
+        /* 超大屏幕优化 */
+        @media (min-width: 2000px) {
+            :root {
+                --scale-factor: 1.2px; /* 限制最大缩放 */
+            }
+        }
+
+        /* 横向模式优化 */
+        @media (max-height: 500px) and (orientation: landscape) {
+            :root {
+                --header-height: 12vh; /* 更高的头部占比 */
+                --base-padding: 0.8vh; /* 更小的内边距 */
+            }
+            .chat-messages {
+                padding: 0.5vh 2vw; /* 垂直方向减少padding */
+            }
+        }
+
+        /* 分区标题栏 - 使用flex布局 */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--base-padding) 0;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: var(--base-padding);
+        }
+
+        .section-header h3 {
+            margin: 0; /* 移除原margin */
+            font-size: calc(1em + 0.3vw);
+        }
+
+        /* 折叠按钮样式 */
+        .collapse-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--gray-color);
+            cursor: pointer;
+            padding: 0.2rem;
+            transition: transform 0.3s ease;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 折叠状态 */
+        .sidebar-section.collapsed .section-content {
+            display: none !important;
+        }
+
+        .sidebar-section.collapsed .collapse-btn {
+            transform: rotate(-90deg) !important;
+        }
+
+        /* 分区内容容器 */
+        .section-content {
+            /* 保留原有padding，移除margin */
+            padding: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        /* 折叠按钮样式 */
+        .sidebar-toggle-btn {
+            position: absolute;
+            top: 50%;
+            right: -15px;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+            padding: 0;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background-color: var(--secondary-color);
+            width: 35px;
+        }
+
+        /* 折叠状态 */
+        .main-content.sidebar-collapsed .sidebar {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        .main-content.sidebar-collapsed .chat-area {
+            flex: 1;
+        }
+
+        .sidebar {
+            transition: margin-left 0.3s ease;
+        }
+
+        /* 小屏幕适配 */
+        @media (max-width: 768px) {
+            /* 按钮尺寸加大，确保可点击 */
+            #sidebarToggle {
+                width: 25px !important; /* 增大到25px */
+                height: 50px !important; /* 增大到50px */
+                font-size: 14px !important;
+                left: 0 !important; /* 强制贴边 */
+                z-index: 9999 !important; /* 最高层级 */
+                -webkit-backface-visibility: hidden; /* 解决移动端fixed闪烁 */
+                -webkit-transform: translateY(-50%) translateZ(0); /* 硬件加速 */
+            }
+        }
+
+        #sidebarToggle {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            width: 25px;
+            height: 70px;               /* ✅ 更高 */
+            background: rgba(92, 92, 92, 0.7); /* ✅ 半透明玻璃 */
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-left: none;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0; /* ✅ 右侧圆角 */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1); /* ✅ 更柔和阴影 */
+        }
+
+        #sidebarToggle:hover {
+            background: rgba(26, 26, 26, 0.8);
+            width: 30px;
+        }
+
+        .main-content.sidebar-collapsed #sidebarToggle .toggle-icon {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+
+        /* 新增的认证卡片样式 */
+        .auth-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: var(--radius-xl);
+            padding: 3rem;
+            box-shadow: var(--glass-shadow);
+            border: 1px solid var(--glass-border);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        /* 全局平滑过渡 */
+        * {
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* 头部玻璃效果 */
+
+
+        /* 图片预览玻璃效果 */
+        #lightbox-img {
+            border-radius: var(--radius-xl);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 滚动条玻璃风格 */
+        ::-webkit-scrollbar-thumb {
+            background: rgba(138, 138, 138, 0.5); /* ✅ 半透明滚动条 */
+            border-radius: var(--radius-sm);
+        }
+
+        /* 回到大厅按钮 - 玻璃边框按钮 */
+        .btn-back {
+            background: var(--glass-bg) !important;           /* ✅ 玻璃背景 */
+            backdrop-filter: var(--glass-blur) !important;
+            -webkit-backdrop-filter: var(--glass-blur) !important;
+            color: var(--primary-color) !important;
+            border: 1px solid var(--glass-border) !important; /* ✅ 玻璃边框 */
+            padding: calc(8 * var(--scale-factor)) calc(16 * var(--scale-factor));
+            border-radius: var(--radius-lg) !important;       /* ✅ 大圆角 */
+            cursor: pointer;
+            font-size: calc(0.9em + 0.1vw);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.4) !important; /* 悬停更亮 */
+            border-color: var(--primary-color) !important;
+            transform: translateY(-2px);
+        }
+
+        /* ========== 头部控制按钮实心样式（修改版） ========== */
+
+        /* 语言选择器 - 实心深灰背景 */
+        #language-selector {
+            padding: calc(8 * var(--scale-factor)) calc(16 * var(--scale-factor));
+            font-weight: 500;
+            border-radius: var(--radius-lg);              /* ✅ 大圆角 */
+            cursor: pointer;
+            font-size: calc(0.9em + 0.1vw);
+            font-family: inherit;
+
+            /* ✅ 实心非透明 */
+            background: var(--primary-color) !important;     /*深灰背景 */
+            color: white !important;                      /* 白色文字 */
+            border: none !important;                      /* 无玻璃边框 */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);  /* ✅ 现代阴影 */
+
+            /* 自定义下拉箭头 */
+            appearance: none;
+            -webkit-appearance: none;
+            background-repeat: no-repeat;
+            background-position: right calc(8 * var(--scale-factor)) center;
+            background-size: 16px;
+            padding-right: calc(40 * var(--scale-factor));
+            transition: all 0.3s ease;
+        }
+
+        #language-selector:hover {
+            background: var(--secondary-color) !important; /* 悬停更深灰 */
+            transform: translateY(-2px);
+        }
+
+        /* 退出按钮 - 实心红色 */
+        .btn-danger {
+            background: var(--danger-color) !important;    /* ✅ 实心红色 */
+            color: white !important;
+            border: none !important;                      /* 移除玻璃边框 */
+            padding: calc(8 * var(--scale-factor)) calc(16 * var(--scale-factor));
+            border-radius: var(--radius-lg) !important;   /* ✅ 大圆角 */
+            cursor: pointer;
+            font-size: calc(0.9em + 0.1vw);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(247, 37, 133, 0.25); /* ✅ 红色阴影 */
+        }
+
+        .btn-danger:hover {
+            background: #d41e75 !important;               /* 更深的红 */
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(247, 37, 133, 0.3);
+        }
+
+        /* 回到大厅按钮保持玻璃效果（不变） */
+        .btn-back {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-blur) !important;
+            -webkit-backdrop-filter: var(--glass-blur) !important;
+            color: var(--primary-color) !important;
+            border: 1px solid var(--glass-border) !important;
+            padding: calc(8 * var(--scale-factor)) calc(16 * var(--scale-factor));
+            border-radius: var(--radius-lg) !important;
+            cursor: pointer;
+            font-size: calc(0.9em + 0.1vw);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.4) !important;
+            border-color: var(--primary-color) !important;
+            transform: translateY(-2px);
+        }
+
+        /* ========== 好友请求按钮新样式 ========== */
+
+        /* 请求项容器 */
+        .friend-request-item {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: calc(12 * var(--scale-factor));
+            margin-bottom: calc(10 * var(--scale-factor));
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .friend-request-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        /* 请求信息文字 */
+        .request-info {
+            flex: 1;
+            font-size: calc(0.9em + 0.1vw);
+        }
+
+        .request-info strong {
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+
+        .request-info span {
+            color: var(--gray-color);
+            margin-left: calc(5 * var(--scale-factor));
+        }
+
+        /* 请求操作按钮容器 */
+        .request-actions {
+            display: flex;
+            gap: calc(8 * var(--scale-factor));
+        }
+
+        /* 接受按钮 - 实心主色调 */
+        .btn-accept {
+            background: var(--primary-color) !important;    /* 深灰背景 */
+            color: white !important;
+            border: none !important;
+            padding: calc(8 * var(--scale-factor)) calc(16 * var(--scale-factor));
+            border-radius: var(--radius-lg) !important;     /* ✅ 大圆角 */
+            cursor: pointer;
+            font-size: calc(0.85em + 0.1vw);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(44, 44, 44, 0.2);  /* 主色调阴影 */
+        }
+
+        .btn-accept:hover {
+            background: var(--secondary-color) !important;  /* 悬停更深 */
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(44, 44, 44, 0.3);
+        }
+
+        /* 拒绝按钮 - 实心红色 */
+        .btn-reject {
+            background: var(--danger-color) !important;     /* 红色背景 */
+            color: white !important;
+            border: none !important;
+            padding: calc(8 * var(--scale-factor)) calc(16 * var(--scale-factor));
+            border-radius: var(--radius-lg) !important;     /* ✅ 大圆角 */
+            cursor: pointer;
+            font-size: calc(0.85em + 0.1vw);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(247, 37, 133, 0.25); /* 红色阴影 */
+        }
+
+        .btn-reject:hover {
+            background: #d41e75 !important;               /* 更深的红 */
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(247, 37, 133, 0.35);
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .friend-request-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: calc(10 * var(--scale-factor));
+            }
+
+            .request-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+
 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <base target="_blank">
 </head>
 <body>
 <div id="lightbox" onclick="this.style.display='none'">
@@ -544,16 +1034,18 @@
 </div>
 
 <div id="auth-container">
-    <h2 data-i18n="login_title">登录 / 注册</h2>
-    <div id="error-msg" class="error-message"></div>
-    <div class="form-group">
-        <input id="username" type="text" class="form-control" placeholder="用户名" data-i18n-placeholder="username_placeholder">
+    <div class="auth-card">
+        <h2 data-i18n="login_title">登录 / 注册</h2>
+        <div id="error-msg" class="error-message"></div>
+        <div class="form-group">
+            <input id="username" type="text" class="form-control" placeholder="用户名" data-i18n-placeholder="username_placeholder">
+        </div>
+        <div class="form-group">
+            <input id="password" type="password" class="form-control" placeholder="密码" data-i18n-placeholder="password_placeholder">
+        </div>
+        <button onclick="login()" class="btn btn-primary btn-block" data-i18n="login_btn">登录</button>
+        <button onclick="register()" class="btn btn-block" style="margin-top: 10px;" data-i18n="register_btn">注册</button>
     </div>
-    <div class="form-group">
-        <input id="password" type="password" class="form-control" placeholder="密码" data-i18n-placeholder="password_placeholder">
-    </div>
-    <button onclick="login()" class="btn btn-primary btn-block" data-i18n="login_btn">登录</button>
-    <button onclick="register()" class="btn btn-block" style="margin-top: 10px;" data-i18n="register_btn">注册</button>
 </div>
 
 <div id="chat-app" style="display: none;">
@@ -570,27 +1062,40 @@
 
     <div class="main-content">
         <div class="sidebar">
+
+            <button class="sidebar-toggle-btn" id="sidebarToggle" title="折叠侧边栏">
+                <span class="toggle-icon">◀</span>
+            </button>
+
             <div class="sidebar-section">
-                <h3 data-i18n="profile_title">我的资料</h3>
-                <div class="form-group">
-                    <label data-i18n="nickname_placeholder">昵称</label>
-                    <input id="profile-nickname" class="form-control" placeholder="昵称" data-i18n-placeholder="nickname_placeholder">
+                <div class="section-header">
+                    <h3 data-i18n="profile_title">我的资料</h3>
+                    <button class="collapse-btn" data-target="profile">▼</button>
                 </div>
-                <div class="form-group">
-                    <label data-i18n="bio_placeholder">简介</label>
-                    <textarea id="profile-bio" class="form-control" placeholder="简介" data-i18n-placeholder="bio_placeholder" rows="3"></textarea>
+                <div class="section-content" id="profile-content">
+                    <div class="form-group">
+                        <label data-i18n="nickname_placeholder">昵称</label>
+                        <input id="profile-nickname" class="form-control" placeholder="昵称" data-i18n-placeholder="nickname_placeholder">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="bio_placeholder">简介</label>
+                        <textarea id="profile-bio" class="form-control" placeholder="简介" data-i18n-placeholder="bio_placeholder" rows="3"></textarea>
+                    </div>
+                    <button onclick="saveProfile()" class="btn btn-primary btn-block" data-i18n="save_btn">保存</button>
                 </div>
-                <button onclick="saveProfile()" class="btn btn-primary btn-block" data-i18n="save_btn">保存</button>
             </div>
 
             <div class="sidebar-section">
-                <h3 data-i18n="friends_title">好友列表</h3>
-                <div class="form-group">
+                <div class="section-header">
+                    <h3 data-i18n="friends_title">好友列表</h3>
+                    <button class="collapse-btn" data-target="friends">▼</button>
+                </div>
+                <div class="section-content" id="friends-content">
                     <input id="friend-target" class="form-control" placeholder="输入用户名添加" data-i18n-placeholder="friend_add_placeholder">
+                    <button onclick="addFriend()" class="btn btn-primary btn-block" data-i18n="add_btn">添加</button>
+                    <div class="friends-list" id="friends-list"></div>
+                    <div id="friend-requests-list"></div>
                 </div>
-                <button onclick="addFriend()" class="btn btn-primary btn-block" data-i18n="add_btn">添加</button>
-                <div class="friends-list" id="friends-list"></div>
-                <div id="friend-requests-list"></div>
             </div>
 
 
@@ -598,12 +1103,17 @@
 
 
             <div class="sidebar-section">
-                <h3 data-i18n="room_settings_title">房间设置</h3>
-                <div class="form-group">
-                    <label data-i18n="announcement_placeholder">公告</label>
-                    <textarea id="room-announcement" class="form-control" placeholder="公告" data-i18n-placeholder="announcement_placeholder" rows="3"></textarea>
+                <div class="section-header">
+                    <h3 data-i18n="room_settings_title">房间设置</h3>
+                    <button class="collapse-btn" data-target="room">▼</button>
                 </div>
-                <button onclick="updateAnnouncement()" class="btn btn-primary btn-block" data-i18n="update_announcement_btn">更新公告</button>
+                <div class="section-content" id="room-content">
+                    <div class="form-group">
+                        <label data-i18n="announcement_placeholder">公告</label>
+                        <textarea id="room-announcement" class="form-control" placeholder="公告" data-i18n-placeholder="announcement_placeholder" rows="3"></textarea>
+                        <button onclick="updateAnnouncement()" class="btn btn-primary btn-block" data-i18n="update_announcement_btn">更新公告</button>
+                    </div>
+                </div>
                 <!--
                 <h4 style="margin-top: 20px;" data-i18n="kick_member_title">踢出成员</h4>
                 <div class="form-group">
@@ -624,14 +1134,14 @@
                     </button>
                 </div>
             </div>
-            
+
             <div id="messages" class="chat-messages"></div>
-            
+
             <div class="chat-input-area">
                 <div class="input-group">
                     <input type="file" id="fileInput">
                     <button id="uploadBtn" class="upload-button" title="上传文件">🗎</button>
-                    <input id="messageInput" type="text" class="message-input" placeholder="输入消息... (尝试 '@Bot help')" data-i18n-placeholder="message_placeholder">
+                    <input id="messageInput" type="text" class="message-input" placeholder="输入消息... " data-i18n-placeholder="message_placeholder">
                     <button id="sendBtn" class="send-button">➤</button>
                 </div>
             </div>
@@ -702,7 +1212,7 @@
             login_btn: "登录",
             register_btn: "注册",
             status_connecting: "连接中...",
-            message_placeholder: "输入消息... (尝试 '@Bot help')",
+            message_placeholder: "输入消息... ",
             send_btn: "发送",
             search_placeholder: "搜索消息...",
             search_btn: "搜索",
@@ -884,10 +1394,10 @@
             if (res.ok) {
                 const data = await res.json();
                 const cType = data.fileType.startsWith('image/') ? 'IMAGE' : 'FILE';
-                const payload = JSON.stringify({ 
-                    content: data.url, 
-                    type: 'GROUP', 
-                    contentType: cType, 
+                const payload = JSON.stringify({
+                    content: data.url,
+                    type: 'GROUP',
+                    contentType: cType,
                     roomId: currentRoomId || 'room_general'  // 确保即使currentRoomId为空也有默认值
                 });
                 if (stompClient && stompClient.connected) {
@@ -1394,8 +1904,8 @@
                         <span>${req.message}</span>
                     </div>
                     <div class="request-actions">
-                        <button onclick="acceptFriendRequest('${req.fromUsername}')">接受</button>
-                        <button onclick="rejectFriendRequest('${req.fromUsername}')">拒绝</button>
+                        <button class="btn-accept" onclick="acceptFriendRequest('${req.fromUsername}')">接受</button>
+                        <button class="btn-reject" onclick="rejectFriendRequest('${req.fromUsername}')">拒绝</button>
                     </div>
                 `;
                     requestsList.appendChild(requestEl);
@@ -1706,6 +2216,175 @@
             //console.error('标记已读失败:', e);
         }
     }
+    /*
+        // 折叠功能实现
+        function initCollapsibleSections() {
+            const sections = document.querySelectorAll('.sidebar-section');
+
+            sections.forEach(section => {
+                const header = section.querySelector('.section-header');
+                const btn = section.querySelector('.collapse-btn');
+
+                if (!header || !btn) return; // 防止报错
+
+                // 点击事件绑定
+                header.addEventListener('click', () => {
+                    section.classList.toggle('collapsed');
+                    saveCollapseState();
+                });
+
+                // 按钮点击（防止事件冒泡问题）
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    section.classList.toggle('collapsed');
+                    saveCollapseState();
+                });
+            });
+
+            // 恢复折叠状态
+            restoreCollapseState();
+        }
+
+        // 保存折叠状态到localStorage
+        function saveCollapseState() {
+            const state = {};
+            document.querySelectorAll('.sidebar-section').forEach((section, index) => {
+                state[index] = section.classList.contains('collapsed');
+            });
+            localStorage.setItem('sidebarCollapseState', JSON.stringify(state));
+        }
+
+        // 从localStorage恢复折叠状态
+        function restoreCollapseState() {
+            const saved = localStorage.getItem('sidebarCollapseState');
+            if (!saved) return;
+
+            const state = JSON.parse(saved);
+            document.querySelectorAll('.sidebar-section').forEach((section, index) => {
+                if (state[index]) {
+                    section.classList.add('collapsed');
+                }
+            });
+        }
+    */
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        initCollapsibleSections();
+        // ... 保留原有代码 ...
+    });
+
+    // ========== 初始化侧边栏整体折叠 ==========
+    function initSidebarToggle() {
+        // 如果按钮不存在，创建它
+        if (!document.getElementById('sidebarToggle')) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggleBtn = document.createElement('button');
+            toggleBtn.id = 'sidebarToggle';
+            toggleBtn.className = 'sidebar-toggle-btn';
+            toggleBtn.innerHTML = '<span class="toggle-icon">◀</span>';
+            toggleBtn.title = '折叠侧边栏';
+            sidebar.appendChild(toggleBtn);
+        }
+
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const mainContent = document.querySelector('.main-content');
+
+        if (toggleBtn && mainContent) {
+            // 移除之前可能绑定的事件
+            const newBtn = toggleBtn.cloneNode(true);
+            toggleBtn.parentNode.replaceChild(newBtn, toggleBtn);
+
+            // 绑定点击事件
+            newBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 阻止冒泡
+                mainContent.classList.toggle('sidebar-collapsed');
+                saveSidebarState();
+            });
+
+            // 恢复状态
+            restoreSidebarState();
+        }
+    }
+
+    // ========== 初始化各分区折叠（修正版） ==========
+    function initCollapsibleSections() {
+        document.querySelectorAll('.sidebar-section').forEach(section => {
+            const header = section.querySelector('.section-header');
+            const btn = section.querySelector('.collapse-btn');
+
+            if (!header || !btn) return;
+
+            // 重新绑定事件，防止冲突
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+
+            // 按钮点击事件
+            newBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 关键：阻止冒泡
+                section.classList.toggle('collapsed');
+                saveCollapseState();
+            });
+
+            // 标题栏点击事件
+            header.addEventListener('click', (e) => {
+                // 确保点击的不是按钮本身
+                if (e.target === newBtn || e.target.classList.contains('collapse-btn')) return;
+                section.classList.toggle('collapsed');
+                saveCollapseState();
+            });
+        });
+
+        restoreCollapseState();
+    }
+
+    // ========== 保存/恢复状态 ==========
+    function saveSidebarState() {
+        const isCollapsed = document.querySelector('.main-content').classList.contains('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', JSON.stringify(isCollapsed));
+    }
+
+    function restoreSidebarState() {
+        const saved = localStorage.getItem('sidebarCollapsed');
+        if (saved) {
+            const isCollapsed = JSON.parse(saved);
+            if (isCollapsed) {
+                document.querySelector('.main-content').classList.add('sidebar-collapsed');
+            }
+        }
+    }
+
+    function saveCollapseState() {
+        const state = {};
+        document.querySelectorAll('.sidebar-section').forEach((section, index) => {
+            state[index] = section.classList.contains('collapsed');
+        });
+        localStorage.setItem('sidebarCollapseState', JSON.stringify(state));
+    }
+
+    function restoreCollapseState() {
+        const saved = localStorage.getItem('sidebarCollapseState');
+        if (saved) {
+            const state = JSON.parse(saved);
+            document.querySelectorAll('.sidebar-section').forEach((section, index) => {
+                if (state[index]) {
+                    section.classList.add('collapsed');
+                }
+            });
+        }
+    }
+
+    // ========== DOM加载完成后初始化 ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        // 先初始化分区折叠
+        initCollapsibleSections();
+        // 再初始化整体折叠
+        initSidebarToggle();
+        // 保留你原有的其他初始化代码...
+        loadProfile();
+        loadFriends();
+    });
+
+
 
 </script>
 </body>
