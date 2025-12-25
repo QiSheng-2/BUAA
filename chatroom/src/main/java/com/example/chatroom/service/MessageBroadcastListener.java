@@ -44,7 +44,6 @@ public class MessageBroadcastListener {
         String topic = "/topic/room." + dto.getTargetId();
         log.info("Broadcasting saved message id={} to {} payload={}", saved.getId(), topic, payload);
 
-        // 发送消息到指定房间
         messagingTemplate.convertAndSend(topic, payload);
     }
 }

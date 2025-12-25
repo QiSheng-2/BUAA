@@ -12,7 +12,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
     boolean existsByUsername(String username);
 
-    // Added helper to fetch multiple users by username list
     List<User> findAllByUsernameIn(List<String> usernames);
     
     @Query("SELECT u.username FROM User u WHERE u.id IN :ids")

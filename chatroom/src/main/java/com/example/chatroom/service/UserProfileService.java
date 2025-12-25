@@ -1,4 +1,3 @@
-/*
 package com.example.chatroom.service;
 
 import com.example.chatroom.dto.UpdateProfileRequest;
@@ -8,11 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-//@Service
-//@Transactional
+@Service
+@Transactional
 public class UserProfileService {
 
-    //@Autowired
+    @Autowired
     private UserRepository userRepository;
 
     public User updateProfile(String username, UpdateProfileRequest request) {
@@ -29,7 +28,7 @@ public class UserProfileService {
         return userRepository.save(user);
     }
 
-    //@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public User getPublicProfile(String username) {
         return userRepository.findByUsername(username)
             .map(u -> {
@@ -39,4 +38,3 @@ public class UserProfileService {
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
-*/

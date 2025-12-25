@@ -1,6 +1,7 @@
 package com.example.chatroom.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 

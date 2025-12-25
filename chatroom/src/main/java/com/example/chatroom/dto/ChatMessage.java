@@ -8,10 +8,16 @@ public class ChatMessage {
     // new fields
     private String type; // CHAT, JOIN, LEAVE, IMAGE, SYSTEM
     private String contentType; // TEXT, IMAGE, FILE
-    private Long roomId;
+    private String roomId;
+    private String senderName;
+    private String senderId;
 
     public String getFrom() {
         return from;
+    }
+
+    public String getSenderName() {
+        return senderName;
     }
 
     public void setFrom(String from) {
@@ -40,6 +46,14 @@ public class ChatMessage {
     public String getContentType() { return contentType; }
     public void setContentType(String contentType) { this.contentType = contentType; }
 
-    public Long getRoomId() { return roomId; }
-    public void setRoomId(Long roomId) { this.roomId = roomId; }
+    public String getRoomId() { return roomId; }
+    public void setRoomId(String roomId) { this.roomId = roomId; }
+
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
+    }
+
+    public String getSenderId() {
+        return senderId;
+    }
 }

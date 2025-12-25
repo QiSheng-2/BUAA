@@ -9,9 +9,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.user.SimpUser;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.util.Map;
 
 @Controller
 public class ChatController {
@@ -23,6 +29,12 @@ public class ChatController {
 
     @Autowired
     private RoomPresenceService roomPresenceService;
+
+    @Autowired
+    private SimpUserRegistry userRegistry;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     // 统一的消息处理方法
     @MessageMapping("/chat.message")
@@ -78,6 +90,31 @@ public class ChatController {
         log.info("User {} ({}) sending to {}: {}", dto.getSenderName(), dto.getSenderId(), dto.getTargetId(), dto.getContent());
 
         messageService.sendMessage(dto);
+        messageService.saveMessageAndIncrementUnread(message);
+
+        // ✅ 检查接收者是否在线且正在该房间
+        String roomId = message.getRoomId();
+        if (roomId.startsWith("private_")) {
+            // 从 roomId 提取接收者
+            String[] parts = roomId.split("_");
+            String receiverId = parts[1].equals(senderId) ? parts[2] : parts[1];
+
+            // 检查接收者是否在线
+            if (roomId.startsWith("private_")) {
+
+                // ✅ 检查接收者是否在线（不检查具体订阅的房间）
+                boolean isReceiverOnline = userRegistry.getUser(receiverId) != null;
+
+                if (isReceiverOnline) {
+                    // 如果在线，尝试发送未读更新通知
+                    messagingTemplate.convertAndSendToUser(
+                            receiverId,
+                            "/queue/unread-update",
+                            Map.of("roomId", roomId, "unreadCount", 0)
+                    );
+                }
+            }
+        }
     }
 
     // 客户端发送一条 join 消息以触发 presence
@@ -103,5 +140,29 @@ public class ChatController {
             } catch (NumberFormatException ignore) {
             }
         }
+
+        ChatMessage joinMessage = new ChatMessage();
+        joinMessage.setContent(username + " 加入了聊天室");
+        joinMessage.setFrom("System");
+        joinMessage.setSenderName("System");
+        joinMessage.setType("SYSTEM");
+        joinMessage.setRoomId(roomId);
+        joinMessage.setTimestamp(System.currentTimeMillis());
+
+        log.info("Broadcasting join message: {}", joinMessage);
+        messageService.sendMessage(convertToDto(joinMessage));
+    }
+
+    // 新增辅助方法
+    private ChatMessageDto convertToDto(ChatMessage msg) {
+        ChatMessageDto dto = new ChatMessageDto();
+        dto.setContent(msg.getContent());
+        dto.setType(msg.getType());
+        dto.setContentType(msg.getContentType());
+        dto.setSenderId("1");
+        dto.setSenderName(msg.getSenderName());
+        dto.setTargetId(msg.getRoomId());
+        dto.setTimestamp(msg.getTimestamp());
+        return dto;
     }
 }

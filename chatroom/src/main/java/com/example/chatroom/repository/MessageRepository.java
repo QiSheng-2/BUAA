@@ -14,18 +14,15 @@ public interface MessageRepository extends JpaRepository<Message, Long>, JpaSpec
     @Query("SELECT m FROM Message m WHERE m.targetId = :targetId ORDER BY m.createdAt DESC")
     Page<Message> findMessagesByTargetIdDesc(@Param("targetId") String targetId, Pageable pageable);
 
-    // 按房间 + 关键词搜索（不区分大小写）
     Page<Message> findByTargetIdAndSearchableContentContainingIgnoreCase(
         String targetId, String keyword, Pageable pageable
     );
 
-    // 获取某用户未读消息数（用于红点）
     @Query("SELECT COUNT(m) FROM Message m " +
            "LEFT JOIN MessageReceipt r ON m.id = r.messageId AND r.userId = :userId " +
            "WHERE m.targetId = :roomId AND r.isRead = false AND m.senderId != :userId")
     long countUnreadMessages(@Param("roomId") String roomId, @Param("userId") String userId);
-    
-    // 查找指定时间段内的消息
+
     @Query("SELECT m FROM Message m WHERE m.targetId = :targetId AND m.createdAt BETWEEN :startTime AND :endTime ORDER BY m.createdAt ASC")
     Page<Message> findByTargetIdAndCreatedAtBetweenOrderByCreatedAtAsc(
         @Param("targetId") String targetId, 
