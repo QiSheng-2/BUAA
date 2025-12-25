@@ -1,24 +1,23 @@
-/*
 package com.example.chatroom.service.bot;
 
 import org.springframework.stereotype.Component;
 
-//@Component
+@Component
 public class EchoCommand implements BotCommand {
 
-    //@Override
+    @Override
     public String getCommand() {
         return "echo";
     }
 
-    //@Override
+    @Override
     public String getDescription() {
-        return "Echoes your message";
+        return "复读你的消息";
     }
 
-    //@Override
+    @Override
     public String execute(String args) {
         return "🦜 " + (args != null ? args : "");
     }
 }
-*/
+

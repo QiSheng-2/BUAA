@@ -1,4 +1,3 @@
-/*
 package com.example.chatroom.service;
 
 import com.example.chatroom.service.bot.BotCommand;
@@ -9,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-//@Service
+@Service
 public class BotService {
 
     private final Map<String, BotCommand> commandMap = new HashMap<>();
@@ -21,7 +20,7 @@ public class BotService {
     }
 
     public String getReply(String query) {
-        if (query == null) return "I didn't catch that.";
+        if (query == null) return "我没听清。";
 
         String trimmed = query.trim();
         String lower = trimmed.toLowerCase();
@@ -47,7 +46,7 @@ public class BotService {
             }
         }
 
-        return "🤔 I don't understand '" + query + "'. Try '@Bot help'.";
+        return "🤔 我不明白 '" + query + "' 是什么意思。试试输入 '@Bot help'。";
     }
 
     private String getHelpMessage() {
@@ -56,9 +55,8 @@ public class BotService {
                 .collect(Collectors.joining("\n"));
 
         return """
-               🤖 I am the ChatBot! Commands:
+               🤖 我是聊天机器人！支持的指令：
                %s
-               • @Bot help : Show this help""".formatted(commandsHelp);
+               • @Bot help : 显示此帮助信息""".formatted(commandsHelp);
     }
 }
-*/

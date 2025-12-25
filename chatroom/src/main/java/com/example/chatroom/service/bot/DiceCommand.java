@@ -1,25 +1,24 @@
-/*
 package com.example.chatroom.service.bot;
 
 import org.springframework.stereotype.Component;
 import java.util.Random;
 
-//@Component
+@Component
 public class DiceCommand implements BotCommand {
 
     private final Random random = new Random();
 
-    //@Override
+    @Override
     public String getCommand() {
         return "dice";
     }
 
-    //@Override
+    @Override
     public String getDescription() {
-        return "Roll a die (1-6) or custom range (e.g., 'dice 20')";
+        return "掷骰子 (1-6) 或自定义范围 (例如: 'dice 20')";
     }
 
-    //@Override
+    @Override
     public String execute(String args) {
         int max = 6;
         if (args != null && !args.trim().isEmpty()) {
@@ -31,7 +30,7 @@ public class DiceCommand implements BotCommand {
             }
         }
         int result = random.nextInt(max) + 1;
-        return "🎲 You rolled a " + result + " (1-" + max + ")";
+        return "🎲 你掷出了 " + result + " (1-" + max + ")";
     }
 }
-*/
+

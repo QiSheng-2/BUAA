@@ -1,6 +1,8 @@
 package com.example.chatroom.websocket;
 
+import com.example.chatroom.dto.ChatMessageDto;
 import com.example.chatroom.dto.PresenceMessage;
+import com.example.chatroom.service.MessageService;
 import com.example.chatroom.service.RoomPresenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -12,7 +14,6 @@ import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class WebSocketPresenceListener {
@@ -22,6 +23,9 @@ public class WebSocketPresenceListener {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private MessageService messageService;
 
     // When client subscribes to a room topic, we add them
     @EventListener
@@ -72,16 +76,40 @@ public class WebSocketPresenceListener {
     public void handleDisconnect(SessionDisconnectEvent event) {
         StompHeaderAccessor sha = StompHeaderAccessor.wrap(event.getMessage());
         Long userId = extractUserId(sha.getUser());
-        if (userId == null && sha.getSessionAttributes() != null) {
-            Object sid = sha.getSessionAttributes().get("userId");
-            if (sid != null) {
-                try { userId = Long.parseLong(String.valueOf(sid)); } catch (Exception ignored) {}
+        String username = null;
+
+        if (sha.getSessionAttributes() != null) {
+            if (userId == null) {
+                Object sid = sha.getSessionAttributes().get("userId");
+                if (sid != null) {
+                    try { userId = Long.parseLong(String.valueOf(sid)); } catch (Exception ignored) {}
+                }
+            }
+            Object uname = sha.getSessionAttributes().get("username");
+            if (uname != null) username = String.valueOf(uname);
+        }
+
+        if (userId != null) {
+            List<String> rooms = presenceService.removeUserFromAllRooms(userId);
+            if (username != null) {
+                for (String roomId : rooms) {
+                    sendLeaveMessage(roomId, username);
+                }
             }
         }
-        if (userId != null) {
-            presenceService.removeUserFromAllRooms(userId);
-            // Optionally broadcast leave for each room — to keep it simple we skip per-room broadcasts here
-        }
+    }
+
+    private void sendLeaveMessage(String roomId, String username) {
+        ChatMessageDto dto = new ChatMessageDto();
+        dto.setContent(username + " 离开了聊天室");
+        dto.setType("SYSTEM");
+        dto.setContentType("TEXT");
+        dto.setSenderId("System");
+        dto.setSenderName("System");
+        dto.setTargetId(roomId);
+        dto.setTimestamp(System.currentTimeMillis());
+
+        messageService.sendMessage(dto);
     }
 
     private String extractRoomId(String destination, List<String> roomIdHeader) {

@@ -1,4 +1,4 @@
-/*
+
 package com.example.chatroom.service;
 
 import com.example.chatroom.entity.Message;
@@ -10,8 +10,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-//@Service
-//@Transactional(readOnly = true)
+@Service
+@Transactional(readOnly = true)
 public class SearchService {
 
     private final MessageRepository messageRepository;
@@ -30,4 +30,3 @@ public class SearchService {
         return messageRepository.findByTargetIdAndSearchableContentContainingIgnoreCase(roomId, keyword.trim(), pageable);
     }
 }
-*/

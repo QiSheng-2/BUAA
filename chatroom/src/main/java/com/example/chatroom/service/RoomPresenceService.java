@@ -26,13 +26,17 @@ public class RoomPresenceService {
         }
     }
 
-    public void removeUserFromAllRooms(Long userId) {
+    public java.util.List<String> removeUserFromAllRooms(Long userId) {
         String userIdStr = String.valueOf(userId);
-        for (Set<String> members : roomMembers.values()) {
-            members.remove(userIdStr);
+        java.util.List<String> joinedRooms = new java.util.ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : roomMembers.entrySet()) {
+            if (entry.getValue().remove(userIdStr)) {
+                joinedRooms.add(entry.getKey());
+            }
         }
         // Clean up empty rooms
         roomMembers.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        return joinedRooms;
     }
 
     public Set<String> getMembersInRoom(String roomId) {

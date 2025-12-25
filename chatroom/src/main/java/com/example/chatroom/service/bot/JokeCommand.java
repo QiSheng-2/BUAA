@@ -1,36 +1,35 @@
-/*
 package com.example.chatroom.service.bot;
 
 import org.springframework.stereotype.Component;
 import java.util.Random;
 
-//@Component
+@Component
 public class JokeCommand implements BotCommand {
 
     private final String[] JOKES = {
-        "Why do Java programmers wear glasses? Because they don't C#.",
-        "There are 10 types of people in the world: those who understand binary, and those who don't.",
-        "A SQL query walks into a bar, walks up to two tables and asks, 'Can I join you?'",
-        "How many programmers does it take to change a light bulb? None, that's a hardware problem.",
-        "Knock, knock. Who's there? Recursion. Recursion who? Knock, knock...",
-        "Debugging: Removing the needles from the haystack."
+        "为什么 Java 程序员戴眼镜？因为他们看不清 C#。",
+        "世界上有 10 种人：懂二进制的和不懂二进制的。",
+        "一个 SQL 查询走进一家酒吧，走到两张桌子前问：'我可以加入你们吗？'",
+        "换一个灯泡需要多少个程序员？一个都不用，那是硬件问题。",
+        "叩叩。谁在那里？递归。递归谁？叩叩...",
+        "调试：从干草堆里找针。"
     };
 
     private final Random random = new Random();
 
-    //@Override
+    @Override
     public String getCommand() {
         return "joke";
     }
 
-    //@Override
+    @Override
     public String getDescription() {
-        return "Random programming joke";
+        return "随机编程笑话";
     }
 
-    //@Override
+    @Override
     public String execute(String args) {
         return "😂 " + JOKES[random.nextInt(JOKES.length)];
     }
 }
-*/
+

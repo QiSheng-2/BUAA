@@ -29,4 +29,5 @@ public interface MessageRepository extends JpaRepository<Message, Long>, JpaSpec
         @Param("startTime") java.time.LocalDateTime startTime, 
         @Param("endTime") java.time.LocalDateTime endTime, 
         Pageable pageable);
+    Page<Message> findByRoomIdAndContentContainingIgnoreCase(String roomId, String content, Pageable pageable);
 }

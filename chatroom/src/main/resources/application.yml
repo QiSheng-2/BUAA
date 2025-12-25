@@ -21,9 +21,9 @@ spring:
     #username: ${SPRING_DATASOURCE_USERNAME:chatuser}
     #password: ${SPRING_DATASOURCE_PASSWORD:K9@xQ3#pT7$}
 
-    url: jdbc:mysql://localhost:3306/chatroom
-    username: root
-    password: myh060219
+    url: jdbc:mysql://localhost:3306/chatroom_db
+    username: chatuser
+    password: K9@xQ3#pT7$
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # JPA / Hibernate

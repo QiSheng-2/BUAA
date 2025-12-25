@@ -1,32 +1,31 @@
-/*
 package com.example.chatroom.service.bot;
 
 import org.springframework.stereotype.Component;
 
-//@Component
+@Component
 public class CalcCommand implements BotCommand {
 
-    //@Override
+    @Override
     public String getCommand() {
         return "calc";
     }
 
-    //@Override
+    @Override
     public String getDescription() {
-        return "Simple calculator (e.g., 'calc 1 + 1')";
+        return "简易计算器 (例如: 'calc 1 + 1')";
     }
 
-    //@Override
+    @Override
     public String execute(String args) {
         if (args == null || args.trim().isEmpty()) {
-            return "🧮 Please provide an expression (e.g., 1 + 1)";
+            return "🧮 请提供一个表达式 (例如: 1 + 1)";
         }
 
         try {
             // Very simple parser for two operands and an operator
             String[] parts = args.trim().split("\\s+");
             if (parts.length != 3) {
-                return "🧮 Invalid format. Try 'number operator number' (e.g., 5 * 3)";
+                return "🧮 格式无效。请尝试 '数字 运算符 数字' (例如: 5 * 3)";
             }
 
             double num1 = Double.parseDouble(parts[0]);
@@ -39,21 +38,21 @@ public class CalcCommand implements BotCommand {
                 case "-": result = num1 - num2; break;
                 case "*": result = num1 * num2; break;
                 case "/":
-                    if (num2 == 0) return "🧮 Cannot divide by zero!";
+                    if (num2 == 0) return "🧮 不能除以零！";
                     result = num1 / num2;
                     break;
                 default:
-                    return "🧮 Unsupported operator: " + op + ". Use +, -, *, or /";
+                    return "🧮 不支持的运算符: " + op + "。请使用 +, -, *, 或 /";
             }
 
             // Format result to remove trailing zeros
             String formatted = String.format("%.10f", result).replaceAll("0*$", "").replaceAll("\\.$", "");
-            return "🧮 Result: " + formatted;
+            return "🧮 结果: " + formatted;
         } catch (NumberFormatException e) {
-            return "🧮 Invalid number format. Try 'calc 1 + 1'";
+            return "🧮 无效的数字格式。请尝试 'calc 1 + 1'";
         } catch (Exception e) {
-            return "🧮 Calculation error: " + e.getMessage();
+            return "🧮 计算错误: " + e.getMessage();
         }
     }
 }
-*/
+

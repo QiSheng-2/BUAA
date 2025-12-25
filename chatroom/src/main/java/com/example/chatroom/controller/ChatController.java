@@ -10,10 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.user.SimpUser;
 import org.springframework.messaging.simp.user.SimpUserRegistry;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
@@ -35,6 +32,9 @@ public class ChatController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private com.example.chatroom.service.BotService botService;
 
     // 统一的消息处理方法
     @MessageMapping("/chat.message")
@@ -114,6 +114,47 @@ public class ChatController {
                     );
                 }
             }
+        }
+
+        // Bot Logic
+        String content = message.getContent();
+        boolean isBotMention = content != null && content.toLowerCase().startsWith("@bot");
+        // 假设 Bot 的名字就是 "Bot"，如果私聊房间包含 "Bot" 且不是用户自己叫 "Bot"
+        boolean isBotPrivate = roomId != null && roomId.contains("Bot") && !senderName.equalsIgnoreCase("Bot");
+
+        if (isBotMention || isBotPrivate) {
+            String query = content;
+            if (isBotMention && content.length() > 4) {
+                query = content.substring(5); // remove "@Bot "
+            }
+
+            String reply = botService.getReply(query);
+
+            ChatMessage botMsg = new ChatMessage();
+            botMsg.setContent(reply);
+            botMsg.setFrom("Bot");
+            botMsg.setSenderName("Bot");
+            botMsg.setSenderId("0"); // Bot ID
+            botMsg.setType(message.getType());
+            botMsg.setContentType("TEXT");
+            botMsg.setRoomId(roomId);
+            botMsg.setTimestamp(System.currentTimeMillis());
+
+            ChatMessageDto botDto = convertToDto(botMsg);
+            botDto.setSenderId("0");
+            botDto.setSenderName("Bot");
+            botDto.setTargetId(roomId);
+
+            // 延迟一点发送，模拟思考
+            new Thread(() -> {
+                try {
+                    Thread.sleep(500);
+                    messageService.sendMessage(botDto);
+                    messageService.saveMessageAndIncrementUnread(botMsg);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
         }
     }
 

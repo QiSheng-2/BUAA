@@ -1,4 +1,4 @@
-/*
+
 package com.example.chatroom.controller;
 
 import com.example.chatroom.entity.Message;
@@ -7,8 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-//@RestController
-//@RequestMapping("/api")
+@RestController
+@RequestMapping("/api")
 public class SearchController {
 
     private final SearchService searchService;
@@ -17,9 +17,9 @@ public class SearchController {
         this.searchService = searchService;
     }
 
-    //@GetMapping("/search")
+    @GetMapping("/search")
     public ResponseEntity<Page<Message>> search(
-            @RequestParam String room,
+            @RequestParam(defaultValue = "room_general") String room,
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -30,4 +30,3 @@ public class SearchController {
         return ResponseEntity.ok(result);
     }
 }
-*/

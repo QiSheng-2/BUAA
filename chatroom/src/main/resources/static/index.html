@@ -758,6 +758,17 @@
                 -webkit-backface-visibility: hidden; /* 解决移动端fixed闪烁 */
                 -webkit-transform: translateY(-50%) translateZ(0); /* 硬件加速 */
             }
+
+            /* 优化移动端消息间距 */
+            .chat-messages {
+                gap: calc(1.5 * var(--base-padding)); /* 增加消息间距 */
+                padding: var(--base-padding) calc(10 * var(--scale-factor)); /* 减少左右留白，给消息更多空间 */
+            }
+
+            .message {
+                max-width: 85%; /* 允许气泡更宽 */
+                margin-bottom: calc(5 * var(--scale-factor)); /* 额外增加一点底部间距 */
+            }
         }
 
         #sidebarToggle {
@@ -1087,6 +1098,22 @@
 
             <div class="sidebar-section">
                 <div class="section-header">
+                    <h3 data-i18n="bot_title">AI 助手</h3>
+                    <button class="collapse-btn" data-target="bot">▼</button>
+                </div>
+                <div class="section-content" id="bot-content">
+                    <button onclick="startBotChat()" class="btn btn-primary btn-block" data-i18n="bot_chat_btn">开始对话</button>
+                    <div style="margin-top: 10px; font-size: 0.85em; color: var(--gray-color);">
+                        <p data-i18n="bot_hint">尝试输入:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>@Bot help</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-header">
                     <h3 data-i18n="friends_title">好友列表</h3>
                     <button class="collapse-btn" data-target="friends">▼</button>
                 </div>
@@ -1128,6 +1155,10 @@
             <div id="status" data-i18n="status_connecting">连接中...</div>
             <div class="chat-header">
                 <div class="chat-title" id="current-room-title">大厅</div>
+                <div class="search-box" style="margin-left: auto; margin-right: 10px; display: flex; align-items: center;">
+                    <input type="text" id="searchInput" placeholder="搜索大厅消息..." style="padding: 5px 10px; border-radius: 15px; border: 1px solid #ccc; outline: none; font-size: 14px;">
+                    <button onclick="searchPublicMessages()" style="margin-left: 5px; padding: 5px 12px; border-radius: 15px; border: none; background-color: var(--primary-color); color: white; cursor: pointer; font-size: 14px;">🔍</button>
+                </div>
                 <div class="chat-actions">
                     <button id="back-to-lobby-btn" class="btn-back" style="display: none;">
                         回到大厅
@@ -1203,7 +1234,10 @@
             error_user_not_found: "User not found",
             error_friend_already: 'You are already friends',
             no_friend_requests: 'No friend requests yet...',
-            logout_btn: 'Logout'
+            logout_btn: 'Logout',
+            bot_title: "AI Assistant",
+            bot_chat_btn: "Start Chat",
+            bot_hint: "Try typing:"
         },
         zh: {
             login_title: "登录 / 注册",
@@ -2384,8 +2418,142 @@
         loadFriends();
     });
 
+    function searchPublicMessages() {
+        const query = document.getElementById('searchInput').value;
+        if (!query) {
+            alert("请输入搜索关键词");
+            return;
+        }
 
+        // 调用后端 API，默认搜索 room_general
+        fetch(`/api/search?q=${encodeURIComponent(query)}&room=room_general`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                displaySearchResults(data.content);
+            })
+            .catch(error => {
+                console.error('Error searching messages:', error);
+                alert("搜索失败，请稍后重试");
+            });
+    }
+
+    function displaySearchResults(messages) {
+        // 移除旧的搜索结果覆盖层（如果存在）
+        const oldOverlay = document.getElementById('search-overlay');
+        if (oldOverlay) {
+            document.body.removeChild(oldOverlay);
+        }
+
+        let resultsHtml = '<div style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">';
+        if (!messages || messages.length === 0) {
+            resultsHtml += '<p style="text-align: center; color: #666; padding: 20px;">没有找到相关消息。</p>';
+        } else {
+            messages.forEach(msg => {
+                const time = new Date(msg.createdAt).toLocaleString();
+                // 简单的转义防止 XSS
+                const safeContent = msg.content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const safeSender = (msg.senderName || 'Unknown').replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+                resultsHtml += `
+                    <div style="border-bottom: 1px solid #eee; padding: 12px 0;">
+                        <div style="font-size: 0.85em; color: #888; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                            <span style="font-weight: bold; color: #333;">${safeSender}</span>
+                            <span>${time}</span>
+                        </div>
+                        <div style="color: #444; line-height: 1.4;">${safeContent}</div>
+                    </div>
+                `;
+            });
+        }
+        resultsHtml += '</div>';
+
+        const overlay = document.createElement('div');
+        overlay.id = 'search-overlay';
+        overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);';
+
+        const content = document.createElement('div');
+        content.style.cssText = 'background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 600px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease-out;';
+
+        const header = document.createElement('div');
+        header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;';
+        header.innerHTML = '<h3 style="margin: 0; font-size: 1.2em;">搜索结果</h3>';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '✕';
+        closeBtn.style.cssText = 'background: none; border: none; font-size: 1.2em; cursor: pointer; color: #666; padding: 5px;';
+        closeBtn.onclick = () => document.body.removeChild(overlay);
+
+        header.appendChild(closeBtn);
+        content.appendChild(header);
+
+        const resultsContainer = document.createElement('div');
+        resultsContainer.innerHTML = resultsHtml;
+        content.appendChild(resultsContainer);
+
+        overlay.appendChild(content);
+
+        // 点击背景关闭
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+            }
+        };
+
+        document.body.appendChild(overlay);
+
+        // 添加简单的淡入动画样式
+        if (!document.getElementById('search-anim-style')) {
+            const style = document.createElement('style');
+            style.id = 'search-anim-style';
+            style.innerHTML = '@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }';
+            document.head.appendChild(style);
+        }
+    }
+
+    // 允许在输入框按回车搜索
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            searchPublicMessages();
+        }
+    });
+
+    function startBotChat() {
+        if (!currentUser) return;
+
+        // 构造一个特殊的 roomId，确保 Bot 在前或后，保持一致性
+        // 约定 private_Bot_username
+        const roomId = `private_Bot_${currentUser}`;
+
+        currentRoomId = roomId;
+        updateRoomTitle(roomId);
+
+        messagesEl.innerHTML = '';
+
+        // 显示欢迎消息
+        const welcomeMsg = {
+            content: "🤖 你好！我是聊天机器人。输入 '@Bot help' 查看我能做什么。",
+            senderName: "Bot",
+            timestamp: Date.now(),
+            type: "SYSTEM"
+        };
+        displayMessage(welcomeMsg);
+
+        if (stompClient && stompClient.connected) {
+            subscribeToRoom(roomId);
+        }
+
+        // 切换到聊天视图（移动端可能需要）
+        if (window.innerWidth <= 768) {
+            document.querySelector('.main-content').classList.add('sidebar-collapsed');
+        }
+    }
 
 </script>
 </body>
 </html>
+
